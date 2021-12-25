@@ -1,4 +1,4 @@
-- 👋 Hi, I’m @sendt
+- 👋 Hi, I’m bayram :)
 - 👀 I’m interested in mobile developer
 - 🌱 I’m currently learning flutter
 - 💞️ I’m looking to collaborate on mobile apps
