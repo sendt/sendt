@@ -5,393 +5,317 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WLD/USDT — Trade Logger</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: #f5f7fa;
-  color: #1a1a2e;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  min-height: 100vh;
-  padding: 16px;
-}
-h1 { text-align:center; font-size:1rem; color:#2563eb; letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
-.subtitle { text-align:center; font-size:0.72rem; color:#64748b; margin-bottom:18px; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#f5f7fa; color:#1e293b; font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; padding:14px; }
+h1 { text-align:center; font-size:1rem; color:#2563eb; letter-spacing:2px; text-transform:uppercase; margin-bottom:2px; }
+.subtitle { text-align:center; font-size:0.7rem; color:#64748b; margin-bottom:14px; }
 
-/* ── Panels ── */
-.panels { display:flex; gap:14px; max-width:1000px; margin:0 auto 20px; }
-.panel {
-  flex:1; background:#ffffff; border:1px solid #e2e8f0;
-  border-radius:12px; padding:16px;
-  box-shadow: 0 1px 4px #00000010;
-}
-.panel-title {
-  font-size:0.72rem; text-transform:uppercase; letter-spacing:1px;
-  color:#64748b; margin-bottom:12px; padding-bottom:8px;
-  border-bottom:1px solid #e2e8f0;
-}
+.panels { display:flex; gap:12px; max-width:1020px; margin:0 auto 16px; }
+.panel { flex:1; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; box-shadow:0 1px 3px #0000000a; }
+.panel-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid #f1f5f9; }
 
-/* ── Form fields ── */
-.field-row { display:flex; gap:10px; margin-bottom:10px; align-items:flex-end; }
-.field { display:flex; flex-direction:column; flex:1; }
-.field label { font-size:0.72rem; color:#64748b; margin-bottom:4px; }
-.field input {
-  background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px;
-  color:#1e293b; padding:8px 10px; font-size:0.9rem; width:100%;
-}
-.field input:focus { outline:none; border-color:#2563eb; }
+.field { display:flex; flex-direction:column; margin-bottom:9px; }
+.field label { font-size:0.7rem; color:#64748b; margin-bottom:3px; }
 
-/* Direction toggle */
-.dir-toggle { display:flex; gap:0; border-radius:7px; overflow:hidden; border:1px solid #cbd5e1; }
-.dir-btn {
-  flex:1; padding:8px 0; font-size:0.85rem; font-weight:700;
-  border:none; cursor:pointer; letter-spacing:1px; transition:background .15s;
-  background:#f8fafc; color:#94a3b8;
-}
+.dir-toggle { display:flex; border-radius:7px; overflow:hidden; border:1px solid #cbd5e1; }
+.dir-btn { flex:1; padding:9px 0; font-size:0.85rem; font-weight:700; border:none; cursor:pointer; background:#f8fafc; color:#94a3b8; transition:background .15s; }
 .dir-btn.active-long  { background:#16a34a; color:#fff; }
 .dir-btn.active-short { background:#dc2626; color:#fff; }
 
-/* Action buttons */
-.action-row { display:flex; gap:10px; margin-top:14px; }
-.btn {
-  flex:1; padding:14px 0; font-size:1rem; font-weight:700;
-  border:none; border-radius:9px; cursor:pointer;
-  letter-spacing:1px; transition:opacity .15s, transform .1s;
-}
+.btn { width:100%; padding:13px 0; font-size:1rem; font-weight:700; border:none; border-radius:8px; cursor:pointer; letter-spacing:1px; transition:opacity .15s, transform .1s; margin-top:10px; }
 .btn:active { transform:scale(.97); opacity:.85; }
 .btn:disabled { opacity:.35; cursor:not-allowed; }
 .btn-open  { background:#16a34a; color:#fff; }
 .btn-close { background:#dc2626; color:#fff; }
 
-/* Result selector */
-.result-row { display:flex; gap:8px; margin-bottom:10px; }
-.res-btn {
-  flex:1; padding:8px 0; font-size:0.85rem; font-weight:700;
-  border:1px solid #cbd5e1; border-radius:7px; cursor:pointer;
-  background:#f8fafc; color:#94a3b8; transition:all .15s;
-}
-.res-btn.active-win  { background:#dcfce7; border-color:#16a34a; color:#15803d; }
-.res-btn.active-loss { background:#fee2e2; border-color:#dc2626; color:#b91c1c; }
-.res-btn.active-be   { background:#fef3c7; border-color:#d97706; color:#b45309; }
-.res-btn.active-vaz  { background:#f1f5f9; border-color:#64748b; color:#475569; }
+.result-row { display:flex; gap:7px; }
+.res-btn { flex:1; padding:8px 0; font-size:0.8rem; font-weight:700; border:1px solid #cbd5e1; border-radius:7px; cursor:pointer; background:#f8fafc; color:#94a3b8; transition:all .15s; }
+.res-btn.a-win  { background:#dcfce7; border-color:#16a34a; color:#15803d; }
+.res-btn.a-loss { background:#fee2e2; border-color:#dc2626; color:#b91c1c; }
+.res-btn.a-be   { background:#fef3c7; border-color:#d97706; color:#b45309; }
+.res-btn.a-vaz  { background:#f1f5f9; border-color:#64748b; color:#475569; }
 
-/* Status */
-.status-bar {
-  text-align:center; min-height:20px; font-size:0.82rem; margin:10px 0;
-}
-.s-ok   { color:#16a34a; }
-.s-err  { color:#dc2626; }
-.s-load { color:#d97706; }
+.field input { background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; color:#1e293b; padding:8px 10px; font-size:0.88rem; }
+.field input:focus { outline:none; border-color:#2563eb; }
 
-/* Trade ID badge */
-.trade-badge {
-  background:#eff6ff; border:1px solid #bfdbfe; border-radius:7px;
-  padding:8px 12px; font-size:0.78rem; color:#64748b; margin-bottom:12px;
-  display:none;
-}
+.status-bar { text-align:center; min-height:18px; font-size:0.8rem; margin:8px 0 0; }
+.s-ok   { color:#16a34a; } .s-err { color:#dc2626; } .s-load { color:#d97706; }
+
+.trade-badge { background:#eff6ff; border:1px solid #bfdbfe; border-radius:7px; padding:7px 11px; font-size:0.75rem; color:#64748b; margin-top:8px; display:none; }
 .trade-badge code { color:#2563eb; }
 
-/* ── Indicator grid ── */
-.ind-section { max-width:1000px; margin:0 auto 20px; }
-.ind-section-title {
-  font-size:0.72rem; text-transform:uppercase; letter-spacing:1px;
-  color:#64748b; margin-bottom:8px;
-}
-.tf-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-.tf-card {
-  background:#ffffff; border:1px solid #e2e8f0; border-radius:10px;
-  overflow:hidden; box-shadow:0 1px 3px #00000008;
-}
-.tf-head {
-  padding:8px 12px; font-size:0.72rem; font-weight:700;
-  text-transform:uppercase; letter-spacing:1px; color:#fff;
-}
+/* Meta info bar */
+.meta-bar { max-width:1020px; margin:0 auto 14px; display:flex; gap:10px; }
+.meta-card { flex:1; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; text-align:center; box-shadow:0 1px 2px #0000000a; }
+.meta-lbl { font-size:0.65rem; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; }
+.meta-val { font-size:0.95rem; font-weight:700; color:#1e293b; margin-top:2px; }
+
+/* Indicator grid */
+.ind-section { max-width:1020px; margin:0 auto 16px; }
+.ind-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:8px; }
+.tf-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.tf-card { background:#fff; border:1px solid #e2e8f0; border-radius:9px; overflow:hidden; box-shadow:0 1px 2px #0000000a; }
+.tf-head { padding:7px 10px; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#fff; }
 .tf-1m  .tf-head { background:#2563eb; }
 .tf-5m  .tf-head { background:#059669; }
 .tf-15m .tf-head { background:#dc2626; }
 .tf-1h  .tf-head { background:#7c3aed; }
-.tf-body { padding:8px 12px; }
-.ind-row {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:4px 0; font-size:0.8rem; border-bottom:1px solid #f1f5f9;
-}
+.tf-1d  .tf-head { background:#b45309; }
+.tf-body { padding:7px 10px; }
+.ind-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:0.75rem; border-bottom:1px solid #f8fafc; }
 .ind-lbl { color:#64748b; }
-.ind-val { font-weight:600; font-family:monospace; font-size:0.82rem; }
-.green  { color:#16a34a; }
-.red    { color:#dc2626; }
-.yellow { color:#d97706; }
-.gray   { color:#94a3b8; }
+.ind-val { font-weight:600; font-family:monospace; font-size:0.77rem; }
+.green { color:#16a34a; } .red { color:#dc2626; } .yellow { color:#d97706; } .gray { color:#94a3b8; } .blue { color:#2563eb; }
 
-/* ── History ── */
-.history-wrap { max-width:1000px; margin:0 auto; }
-.history-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:8px; }
-.hist-table-wrap { background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; overflow-x:auto; box-shadow:0 1px 3px #00000008; }
-table { width:100%; border-collapse:collapse; font-size:0.76rem; }
-th { background:#f8fafc; padding:8px 10px; text-align:center; color:#64748b; font-weight:600; white-space:nowrap; border-bottom:1px solid #e2e8f0; }
-td { padding:6px 10px; border-top:1px solid #f1f5f9; text-align:center; white-space:nowrap; color:#1e293b; }
+/* History */
+.hist-wrap { max-width:1020px; margin:0 auto; }
+.hist-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:7px; }
+.hist-table-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:9px; overflow-x:auto; box-shadow:0 1px 2px #0000000a; }
+table { width:100%; border-collapse:collapse; font-size:0.73rem; }
+th { background:#f8fafc; padding:7px 8px; text-align:center; color:#64748b; font-weight:600; white-space:nowrap; border-bottom:1px solid #e2e8f0; }
+td { padding:5px 8px; border-top:1px solid #f1f5f9; text-align:center; white-space:nowrap; color:#1e293b; }
 tr:hover td { background:#f8fafc; }
-.badge { display:inline-block; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.7rem; }
+.badge { display:inline-block; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.68rem; }
 .b-long  { background:#dcfce7; color:#15803d; border:1px solid #16a34a; }
 .b-short { background:#fee2e2; color:#b91c1c; border:1px solid #dc2626; }
 .b-win   { background:#dcfce7; color:#15803d; }
 .b-loss  { background:#fee2e2; color:#b91c1c; }
 .b-be    { background:#fef3c7; color:#b45309; }
 .b-vaz   { background:#f1f5f9; color:#475569; }
+.empty-hint { text-align:center; padding:24px; color:#94a3b8; font-size:0.82rem; }
 
-.empty-hint { text-align:center; padding:30px; color:#94a3b8; font-size:0.85rem; }
-
-@media(max-width:700px){
-  .panels { flex-direction:column; }
-  .tf-grid { grid-template-columns:repeat(2,1fr); }
-}
+@media(max-width:700px){ .panels{flex-direction:column;} .tf-grid{grid-template-columns:repeat(2,1fr);} .meta-bar{flex-wrap:wrap;} }
 </style>
 </head>
 <body>
 
 <h1>WLD / USDT — Trade Logger</h1>
-<div class="subtitle">İşlem aç → butona bas → indikatörler kaydedilir · Excel'e yazar</div>
+<div class="subtitle">TradingView'da işlem aç → butona bas → indikatörler kaydedilir</div>
 
 <div class="panels">
-
-  <!-- Sol: İşlem Aç -->
+  <!-- Sol: Aç -->
   <div class="panel">
     <div class="panel-title">▶ İşlem Aç</div>
-
-    <div class="field-row">
-      <div class="field">
-        <label>Yön</label>
-        <div class="dir-toggle">
-          <button class="dir-btn active-long" id="btnLong" onclick="setDir('LONG')">LONG</button>
-          <button class="dir-btn" id="btnShort" onclick="setDir('SHORT')">SHORT</button>
-        </div>
+    <div class="field">
+      <label>Yön</label>
+      <div class="dir-toggle">
+        <button class="dir-btn active-long" id="btnLong" onclick="setDir('LONG')">LONG</button>
+        <button class="dir-btn" id="btnShort" onclick="setDir('SHORT')">SHORT</button>
       </div>
     </div>
-
     <button class="btn btn-open" id="btnOpen" onclick="openTrade()">▶ İŞLEM AÇ &amp; KAYDET</button>
     <div class="status-bar" id="statusOpen"></div>
-    <div class="trade-badge" id="tradeBadge">
-      Açık işlem ID: <code id="openTradeId">—</code> — kapatırken otomatik kullanılır
-    </div>
+    <div class="trade-badge" id="tradeBadge">Açık işlem: <code id="openTradeId">—</code></div>
   </div>
 
-  <!-- Sağ: İşlem Kapat -->
+  <!-- Sağ: Kapat -->
   <div class="panel">
     <div class="panel-title">◀ İşlem Kapat</div>
-
-    <div class="field" style="margin-bottom:10px;">
+    <div class="field">
       <label>Sonuç</label>
       <div class="result-row">
-        <button class="res-btn" id="resWin"  onclick="setResult('WIN')">WIN</button>
-        <button class="res-btn" id="resLoss" onclick="setResult('LOSS')">LOSS</button>
-        <button class="res-btn" id="resBe"   onclick="setResult('BE')">BE</button>
-        <button class="res-btn" id="resVaz"  onclick="setResult('VAZGEÇTİM')">VAZGEÇTİM</button>
+        <button class="res-btn" id="rWin"  onclick="setResult('WIN')">WIN</button>
+        <button class="res-btn" id="rLoss" onclick="setResult('LOSS')">LOSS</button>
+        <button class="res-btn" id="rBe"   onclick="setResult('BE')">BE</button>
+        <button class="res-btn" id="rVaz"  onclick="setResult('VAZGEÇTİM')">VAZGEÇTİM</button>
       </div>
     </div>
-
-    <div class="field" style="margin-bottom:14px;">
-      <label>Trade ID (otomatik dolar, değiştirebilirsin)</label>
+    <div class="field">
+      <label>Trade ID (otomatik dolar)</label>
       <input id="inpCloseId" type="text" placeholder="T260517123456">
     </div>
-
     <button class="btn btn-close" id="btnClose" onclick="closeTrade()">◀ İŞLEM KAPAT &amp; KAYDET</button>
     <div class="status-bar" id="statusClose"></div>
   </div>
-
 </div>
 
-<!-- İndikatörler -->
+<!-- Meta bar -->
+<div class="meta-bar" id="metaBar" style="display:none">
+  <div class="meta-card"><div class="meta-lbl">Fiyat</div><div class="meta-val" id="mPrice">—</div></div>
+  <div class="meta-card"><div class="meta-lbl">Gün</div><div class="meta-val" id="mGun">—</div></div>
+  <div class="meta-card"><div class="meta-lbl">Seans</div><div class="meta-val" id="mSeans">—</div></div>
+  <div class="meta-card"><div class="meta-lbl">BTC Yön</div><div class="meta-val" id="mBtc">—</div></div>
+  <div class="meta-card"><div class="meta-lbl">Zaman (UTC)</div><div class="meta-val" id="mTime">—</div></div>
+</div>
+
+<!-- Indikatörler -->
 <div class="ind-section">
-  <div class="ind-section-title">Son Yakalanan İndikatörler</div>
-  <div class="tf-grid" id="tfGrid">
+  <div class="ind-title">Son Yakalanan İndikatörler</div>
+  <div class="tf-grid">
     <div class="tf-card tf-1m">  <div class="tf-head">1m</div>  <div class="tf-body" id="tf1m"><div class="empty-hint">—</div></div></div>
     <div class="tf-card tf-5m">  <div class="tf-head">5m</div>  <div class="tf-body" id="tf5m"><div class="empty-hint">—</div></div></div>
     <div class="tf-card tf-15m"> <div class="tf-head">15m</div> <div class="tf-body" id="tf15m"><div class="empty-hint">—</div></div></div>
     <div class="tf-card tf-1h">  <div class="tf-head">1h</div>  <div class="tf-body" id="tf1h"><div class="empty-hint">—</div></div></div>
+    <div class="tf-card tf-1d">  <div class="tf-head">1D</div>  <div class="tf-body" id="tf1d"><div class="empty-hint">—</div></div></div>
   </div>
 </div>
 
 <!-- Geçmiş -->
-<div class="history-wrap">
-  <div class="history-title">İşlem Geçmişi (Excel'den)</div>
+<div class="hist-wrap">
+  <div class="hist-title">İşlem Geçmişi</div>
   <div class="hist-table-wrap">
     <table>
       <thead><tr>
-        <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th><th>Sonuç</th>
-        <th>1m Don.</th><th>1m RSI</th><th>1m RSI Önc.</th><th>1m Div.</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
-        <th>5m Don.</th><th>5m RSI</th><th>5m RSI Önc.</th><th>5m Div.</th><th>5m UT K=1</th><th>5m UT K=2</th>
-        <th>15m Don.</th><th>15m RSI</th><th>15m RSI Önc.</th><th>15m Div.</th><th>15m UT K=1</th><th>15m UT K=2</th>
+        <th>Tarih</th><th>Saat</th><th>Gün</th><th>Seans</th><th>Yön</th><th>Sonuç</th><th>BTC</th>
+        <th>1m Don%</th><th>1m RSI</th><th>1m StochK</th><th>1m UT1</th><th>1m UT2</th><th>1m MACD</th>
+        <th>5m Don%</th><th>5m RSI</th><th>5m StochK</th><th>5m UT1</th><th>5m UT2</th>
+        <th>15m Don%</th><th>15m RSI</th><th>15m StochK</th><th>15m UT1</th><th>15m UT2</th>
+        <th>1h RSI</th><th>1h UT1</th><th>1D Trend</th>
       </tr></thead>
-      <tbody id="histBody"><tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr></tbody>
+      <tbody id="histBody"><tr><td colspan="26" class="empty-hint">Henüz kayıt yok</td></tr></tbody>
     </table>
   </div>
 </div>
 
 <script>
-let currentDir = 'LONG';
-let currentResult = '';
-let currentTradeId = '';
+let dir = 'LONG', result = '', tradeId = '';
 
 function setDir(d) {
-  currentDir = d;
+  dir = d;
   document.getElementById('btnLong').className  = 'dir-btn' + (d==='LONG'  ? ' active-long'  : '');
   document.getElementById('btnShort').className = 'dir-btn' + (d==='SHORT' ? ' active-short' : '');
 }
-
 function setResult(r) {
-  currentResult = r;
-  document.getElementById('resWin').className  = 'res-btn' + (r==='WIN'        ? ' active-win'  : '');
-  document.getElementById('resLoss').className = 'res-btn' + (r==='LOSS'       ? ' active-loss' : '');
-  document.getElementById('resBe').className   = 'res-btn' + (r==='BE'         ? ' active-be'   : '');
-  document.getElementById('resVaz').className  = 'res-btn' + (r==='VAZGEÇTİM' ? ' active-vaz'  : '');
+  result = r;
+  document.getElementById('rWin').className  = 'res-btn' + (r==='WIN'        ? ' a-win'  : '');
+  document.getElementById('rLoss').className = 'res-btn' + (r==='LOSS'       ? ' a-loss' : '');
+  document.getElementById('rBe').className   = 'res-btn' + (r==='BE'         ? ' a-be'   : '');
+  document.getElementById('rVaz').className  = 'res-btn' + (r==='VAZGEÇTİM' ? ' a-vaz'  : '');
+}
+function sts(id, msg, t) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'status-bar s-' + t;
 }
 
-function status(elId, msg, type) {
-  const el = document.getElementById(elId);
-  el.textContent = msg;
-  el.className = 'status-bar s-' + type;
-}
-
-function colorVal(key, val) {
-  if (!val || val === '-') return `<span class="gray">—</span>`;
+function cv(key, val) {
+  if (val == null || val === '-' || val === '') return `<span class="gray">—</span>`;
   const v = String(val);
-  const green = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN','Bull'];
-  const red   = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN','Bear'];
-  const yel   = ['BE','MID','-','Y.AZALAN','K.AZALAN','YATAY'];
-  if (green.some(x => v.includes(x))) return `<span class="green">${v}</span>`;
-  if (red.some(x => v.includes(x)))   return `<span class="red">${v}</span>`;
-  if (yel.some(x => v === x))         return `<span class="yellow">${v}</span>`;
-  if (key === 'rsi') {
+  const g = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN','Bull','Asya'];
+  const r = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN','Bear'];
+  const y = ['BE','Y.AZALAN','K.AZALAN','YATAY'];
+  if (g.some(x => v.includes(x))) return `<span class="green">${v}</span>`;
+  if (r.some(x => v.includes(x))) return `<span class="red">${v}</span>`;
+  if (y.some(x => v === x))       return `<span class="yellow">${v}</span>`;
+  if (['rsi','rsi_prev','stoch_k','stoch_d'].includes(key)) {
     const n = parseFloat(v);
-    if (n > 70) return `<span class="red">${v}</span>`;
-    if (n < 30) return `<span class="green">${v}</span>`;
+    if (!isNaN(n)) {
+      if (n > 70) return `<span class="red">${v}</span>`;
+      if (n < 30) return `<span class="green">${v}</span>`;
+    }
   }
-  if (v === 'OVERBOUGHT') return `<span class="red">${v}</span>`;
-  if (v === 'OVERSOLD')   return `<span class="green">${v}</span>`;
-  return `<span style="color:#e6edf3">${v}</span>`;
+  if (key === 'donchian_pct') {
+    const n = parseFloat(v);
+    if (!isNaN(n)) {
+      if (n > 80) return `<span class="red">${v}%</span>`;
+      if (n < 20) return `<span class="green">${v}%</span>`;
+      return `<span style="color:#1e293b">${v}%</span>`;
+    }
+  }
+  if (key === 'macd_hist') {
+    const n = parseFloat(v);
+    if (!isNaN(n)) return n >= 0 ? `<span class="green">${v}</span>` : `<span class="red">${v}</span>`;
+  }
+  return `<span style="color:#1e293b">${v}</span>`;
 }
 
-function renderTf(tfId, data) {
-  const labels = {
-    donchian:'Donchian', fiyat_hull:'Fiyat/Hull',
-    rsi:'RSI', rsi_prev:'RSI Önceki', rsi_yon:'RSI Yön', rsi_div:'RSI Diverjans',
-    ut_bot_k1:'UT Bot K=1', ut_bot_k2:'UT Bot K=2',
-    macd:'MACD', stochrsi:'StochRSI', trend:'Trend'
-  };
-  let html = '';
-  for (const [k, lbl] of Object.entries(labels)) {
-    html += `<div class="ind-row">
-      <span class="ind-lbl">${lbl}</span>
-      <span class="ind-val">${colorVal(k, data[k])}</span>
-    </div>`;
-  }
-  document.getElementById(tfId).innerHTML = html;
+function renderTf(id, d) {
+  const rows = [
+    ['donchian','Donchian'],['donchian_pct','Don%'],['fiyat_hull','Fiyat/Hull'],
+    ['rsi','RSI'],['rsi_prev','RSI Önc'],['rsi_yon','RSI Yön'],['rsi_div','RSI Div'],
+    ['stoch_k','Stoch K'],['stoch_d','Stoch D'],
+    ['ut_bot_k1','UT K=1'],['ut_bot_k2','UT K=2'],
+    ['macd_hist','MACD Hist'],['macd_yon','MACD Yön'],['trend','Trend'],
+  ];
+  document.getElementById(id).innerHTML = rows.map(([k,l]) =>
+    `<div class="ind-row"><span class="ind-lbl">${l}</span><span class="ind-val">${cv(k,d[k])}</span></div>`
+  ).join('');
 }
 
-function renderIndicators(indicators) {
-  if (indicators['1m'])  renderTf('tf1m',  indicators['1m']);
-  if (indicators['5m'])  renderTf('tf5m',  indicators['5m']);
-  if (indicators['15m']) renderTf('tf15m', indicators['15m']);
-  if (indicators['1h'])  renderTf('tf1h',  indicators['1h']);
+function showMeta(data) {
+  document.getElementById('metaBar').style.display = 'flex';
+  const btcColor = data.btc_yon === 'YUKARI' ? '#16a34a' : '#dc2626';
+  document.getElementById('mPrice').textContent = data.price + ' USDT';
+  document.getElementById('mGun').textContent   = data.gun || '—';
+  document.getElementById('mSeans').textContent = data.seans || '—';
+  document.getElementById('mBtc').innerHTML     = `<span style="color:${btcColor}">${data.btc_yon||'—'}</span>`;
+  document.getElementById('mTime').textContent  = data.datetime_utc;
 }
 
 async function openTrade() {
   document.getElementById('btnOpen').disabled = true;
-  status('statusOpen', 'Veri çekiliyor...', 'load');
-
+  sts('statusOpen','Veri çekiliyor...','load');
   try {
-    const res = await fetch('/open_trade', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ direction: currentDir })
-    });
+    const res  = await fetch('/open_trade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({direction:dir})});
     const data = await res.json();
-    if (data.error) { status('statusOpen', 'Hata: ' + data.error, 'err'); return; }
-
-    currentTradeId = data.trade_id;
-    document.getElementById('openTradeId').textContent = data.trade_id;
+    if (data.error) { sts('statusOpen','Hata: '+data.error,'err'); return; }
+    tradeId = data.trade_id;
+    document.getElementById('openTradeId').textContent = tradeId;
     document.getElementById('tradeBadge').style.display = 'block';
-    document.getElementById('inpCloseId').value = data.trade_id;
-
-    renderIndicators(data.indicators);
-    status('statusOpen', `✓ Kaydedildi — Giriş: ${data.price} USDT  ${data.datetime_utc} UTC`, 'ok');
-  } catch(e) {
-    status('statusOpen', 'Bağlantı hatası: ' + e.message, 'err');
-  } finally {
-    document.getElementById('btnOpen').disabled = false;
-  }
+    document.getElementById('inpCloseId').value = tradeId;
+    showMeta(data);
+    ['1m','5m','15m','1h','1d'].forEach(tf => { if(data.indicators[tf]) renderTf('tf'+tf.replace('d','d'), data.indicators[tf]); });
+    // fix 1d id
+    if(data.indicators['1d']) renderTf('tf1d', data.indicators['1d']);
+    sts('statusOpen',`✓ Kaydedildi — ${data.datetime_utc} UTC`,'ok');
+  } catch(e) { sts('statusOpen','Bağlantı hatası: '+e.message,'err'); }
+  finally { document.getElementById('btnOpen').disabled = false; }
 }
 
 async function closeTrade() {
-  const tradeId = document.getElementById('inpCloseId').value.trim() || currentTradeId;
-  if (!tradeId) { status('statusClose', 'Önce işlem aç veya Trade ID gir', 'err'); return; }
-  if (!currentResult) { status('statusClose', 'Sonucu seç: WIN / LOSS / BE', 'err'); return; }
-
+  const tid = document.getElementById('inpCloseId').value.trim() || tradeId;
+  if (!tid)    { sts('statusClose','Önce işlem aç','err'); return; }
+  if (!result) { sts('statusClose','Sonucu seç','err'); return; }
   document.getElementById('btnClose').disabled = true;
-  status('statusClose', 'Binance\'ten veri çekiliyor...', 'load');
-
+  sts('statusClose','Veri çekiliyor...','load');
   try {
-    const res = await fetch('/close_trade', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ trade_id: tradeId, result: currentResult })
-    });
+    const res  = await fetch('/close_trade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trade_id:tid,result})});
     const data = await res.json();
-    if (data.error) { status('statusClose', 'Hata: ' + data.error, 'err'); return; }
-
-    renderIndicators(data.indicators);
-    status('statusClose', `✓ Excel'e kaydedildi — Kapanış: ${data.price} USDT`, 'ok');
-    document.getElementById('tradeBadge').style.display = 'none';
-    currentTradeId = '';
-    document.getElementById('inpCloseId').value = '';
-    setResult('');
+    if (data.error) { sts('statusClose','Hata: '+data.error,'err'); return; }
+    ['1m','5m','15m','1h','1d'].forEach(tf => { if(data.indicators[tf]) renderTf('tf'+tf,data.indicators[tf]); });
+    if(data.indicators['1d']) renderTf('tf1d',data.indicators['1d']);
+    sts('statusClose',`✓ Excel'e kaydedildi — ${data.datetime_utc} UTC`,'ok');
+    document.getElementById('tradeBadge').style.display='none';
+    tradeId=''; document.getElementById('inpCloseId').value=''; setResult('');
     loadHistory();
-  } catch(e) {
-    status('statusClose', 'Bağlantı hatası: ' + e.message, 'err');
-  } finally {
-    document.getElementById('btnClose').disabled = false;
-  }
+  } catch(e) { sts('statusClose','Bağlantı hatası: '+e.message,'err'); }
+  finally { document.getElementById('btnClose').disabled=false; }
 }
 
-function dirBadge(d) {
-  return d === 'LONG'
-    ? `<span class="badge b-long">LONG</span>`
-    : `<span class="badge b-short">SHORT</span>`;
-}
-function resBadge(r) {
-  const map = {WIN:'b-win', LOSS:'b-loss', BE:'b-be', 'VAZGEÇTİM':'b-vaz'};
-  return r ? `<span class="badge ${map[r]||''}">${r}</span>` : '—';
-}
+function dirBadge(d) { return d==='LONG'?`<span class="badge b-long">LONG</span>`:`<span class="badge b-short">SHORT</span>`; }
+function resBadge(r) { const m={WIN:'b-win',LOSS:'b-loss',BE:'b-be','VAZGEÇTİM':'b-vaz'}; return r?`<span class="badge ${m[r]||''}">${r}</span>`:'—'; }
 
 async function loadHistory() {
   try {
-    const res = await fetch('/history');
+    const res  = await fetch('/history');
     const rows = await res.json();
     const tbody = document.getElementById('histBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="23" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="26" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
     tbody.innerHTML = rows.map(r => `<tr>
-      <td>${r.date}</td><td>${r.time}</td>
-      <td>${dirBadge(r.direction)}</td>
-      <td>${r.entry}</td><td>${resBadge(r.result)}</td>
-      <td>${colorVal('donchian',  r.ind_1m?.donchian)}</td>
-      <td>${colorVal('rsi',       r.ind_1m?.rsi)}</td>
-      <td>${colorVal('rsi',       r.ind_1m?.rsi_prev)}</td>
-      <td>${colorVal('rsi_yon',   r.ind_1m?.rsi_yon)}</td>
-      <td>${colorVal('rsi_div',   r.ind_1m?.rsi_div)}</td>
-      <td>${colorVal('ut_bot_k1', r.ind_1m?.ut_bot_k1)}</td>
-      <td>${colorVal('ut_bot_k2', r.ind_1m?.ut_bot_k2)}</td>
-      <td>${colorVal('macd',      r.ind_1m?.macd)}</td>
-      <td>${colorVal('donchian',  r.ind_5m?.donchian)}</td>
-      <td>${colorVal('rsi',       r.ind_5m?.rsi)}</td>
-      <td>${colorVal('rsi',       r.ind_5m?.rsi_prev)}</td>
-      <td>${colorVal('rsi_div',   r.ind_5m?.rsi_div)}</td>
-      <td>${colorVal('ut_bot_k1', r.ind_5m?.ut_bot_k1)}</td>
-      <td>${colorVal('ut_bot_k2', r.ind_5m?.ut_bot_k2)}</td>
-      <td>${colorVal('donchian',  r.ind_15m?.donchian)}</td>
-      <td>${colorVal('rsi',       r.ind_15m?.rsi)}</td>
-      <td>${colorVal('rsi',       r.ind_15m?.rsi_prev)}</td>
-      <td>${colorVal('rsi_div',   r.ind_15m?.rsi_div)}</td>
-      <td>${colorVal('ut_bot_k1', r.ind_15m?.ut_bot_k1)}</td>
-      <td>${colorVal('ut_bot_k2', r.ind_15m?.ut_bot_k2)}</td>
+      <td>${r.date}</td><td>${r.time}</td><td>${r.gun||'—'}</td><td>${r.seans||'—'}</td>
+      <td>${dirBadge(r.direction)}</td><td>${resBadge(r.result)}</td>
+      <td>${cv('btc_yon',r.btc_yon)}</td>
+      <td>${cv('donchian_pct',r.ind_1m?.donchian_pct)}</td>
+      <td>${cv('rsi',r.ind_1m?.rsi)}</td>
+      <td>${cv('stoch_k',r.ind_1m?.stoch_k)}</td>
+      <td>${cv('ut_bot_k1',r.ind_1m?.ut_bot_k1)}</td>
+      <td>${cv('ut_bot_k2',r.ind_1m?.ut_bot_k2)}</td>
+      <td>${cv('macd_hist',r.ind_1m?.macd_hist)}</td>
+      <td>${cv('donchian_pct',r.ind_5m?.donchian_pct)}</td>
+      <td>${cv('rsi',r.ind_5m?.rsi)}</td>
+      <td>${cv('stoch_k',r.ind_5m?.stoch_k)}</td>
+      <td>${cv('ut_bot_k1',r.ind_5m?.ut_bot_k1)}</td>
+      <td>${cv('ut_bot_k2',r.ind_5m?.ut_bot_k2)}</td>
+      <td>${cv('donchian_pct',r.ind_15m?.donchian_pct)}</td>
+      <td>${cv('rsi',r.ind_15m?.rsi)}</td>
+      <td>${cv('stoch_k',r.ind_15m?.stoch_k)}</td>
+      <td>${cv('ut_bot_k1',r.ind_15m?.ut_bot_k1)}</td>
+      <td>${cv('ut_bot_k2',r.ind_15m?.ut_bot_k2)}</td>
+      <td>${cv('rsi',r.ind_1h?.rsi)}</td>
+      <td>${cv('ut_bot_k1',r.ind_1h?.ut_bot_k1)}</td>
+      <td>${cv('trend',r.ind_1d?.trend)}</td>
     </tr>`).join('');
   } catch(e) {}
 }
-
 loadHistory();
 </script>
 </body>

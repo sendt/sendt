@@ -6,78 +6,79 @@ from openpyxl.utils import get_column_letter
 
 from config import EXCEL_FILE, TIMEFRAMES
 
-C_HEADER_BG = "1F2937"
-C_TF_1M     = "1E3A5F"
-C_TF_5M     = "1E4D3A"
-C_TF_15M    = "4A2020"
-C_TF_1H     = "3B2A50"
-C_INFO_BG   = "111827"
-C_ROW_EVEN  = "1A2233"
-C_ROW_ODD   = "111827"
-C_ROW_WIN   = "0F2D1A"   # koyu yeşil satır
-C_ROW_LOSS  = "2D0F0F"   # koyu kırmızı satır
-C_ROW_BE    = "2D260A"   # koyu sarı satır
-C_ROW_VAZ   = "1E1E2A"   # koyu gri satır
-C_GREEN     = "22C55E"
-C_RED       = "EF4444"
-C_YELLOW    = "EAB308"
-C_WHITE     = "F9FAFB"
-C_GRAY      = "9CA3AF"
+C_BG      = "111827"
+C_TF_1M   = "1E3A5F"
+C_TF_5M   = "1E4D3A"
+C_TF_15M  = "4A2020"
+C_TF_1H   = "3B2A50"
+C_TF_1D   = "3D2B00"
+C_TF_BTC  = "1A3040"
+C_INFO    = "0F172A"
+C_WIN     = "0F2D1A"
+C_LOSS    = "2D0F0F"
+C_BE      = "2D260A"
+C_VAZ     = "1E1E2A"
+C_ROW_E   = "161D2B"
+C_ROW_O   = "111827"
+C_GREEN   = "22C55E"
+C_RED     = "EF4444"
+C_YELLOW  = "EAB308"
+C_BLUE    = "60A5FA"
+C_WHITE   = "F1F5F9"
+C_GRAY    = "94A3B8"
 
-TF_LABELS = {"1m": "1 DAKİKA", "5m": "5 DAKİKA", "15m": "15 DAKİKA", "1h": "1 SAAT (OPS.)"}
-TF_COLORS = {"1m": C_TF_1M, "5m": C_TF_5M, "15m": C_TF_15M, "1h": C_TF_1H}
+TF_LABELS = {"1m":"1 DAKİKA","5m":"5 DAKİKA","15m":"15 DAKİKA","1h":"1 SAAT","1d":"1 GÜN"}
+TF_COLORS = {"1m":C_TF_1M,"5m":C_TF_5M,"15m":C_TF_15M,"1h":C_TF_1H,"1d":C_TF_1D}
 
-INFO_COLS = ["Tarih", "Saat", "Yön", "Giriş", "Sonuç"]
-IND_COLS  = [
-    "Donchian", "Fiyat/Hull",
-    "RSI", "RSI Önceki", "RSI Yön", "RSI Diverjans",
-    "UT Bot K=1", "UT Bot K=2",
-    "MACD", "StochRSI", "Trend",
-]
-IND_KEYS  = [
-    "donchian", "fiyat_hull",
-    "rsi", "rsi_prev", "rsi_yon", "rsi_div",
-    "ut_bot_k1", "ut_bot_k2",
-    "macd", "stochrsi", "trend",
-]
-IND_WIDTHS = [11, 16, 7, 9, 9, 12, 10, 10, 13, 12, 9]
-ALL_COLS   = INFO_COLS + IND_COLS * len(TIMEFRAMES)
+INFO_COLS = ["Tarih","Saat","Gün","Seans","Yön","Sonuç"]
+IND_COLS  = ["Donchian","Don%","Fiyat/Hull","RSI","RSI Önc","RSI Yön","RSI Div",
+             "Stoch K","Stoch D","UT K=1","UT K=2","MACD Hist","MACD Yön","Trend"]
+IND_KEYS  = ["donchian","donchian_pct","fiyat_hull","rsi","rsi_prev","rsi_yon","rsi_div",
+             "stoch_k","stoch_d","ut_bot_k1","ut_bot_k2","macd_hist","macd_yon","trend"]
+IND_W     = [10,7,14,6,7,8,7, 8,8,8,8,11,11,8]
+
+BTC_COLS  = ["BTC Yön"]
+BTC_KEYS  = ["btc_yon"]
+ALL_COLS  = INFO_COLS + IND_COLS * len(TIMEFRAMES) + BTC_COLS
 
 
 def _fill(c): return PatternFill("solid", fgColor=c)
-def _font(bold=False, color=C_WHITE, size=9): return Font(bold=bold, color=color, name="Segoe UI", size=size)
-def _center(): return Alignment(horizontal="center", vertical="center", wrap_text=True)
+def _font(bold=False, color=C_WHITE, size=9):
+    return Font(bold=bold, color=color, name="Segoe UI", size=size)
+def _center(): return Alignment(horizontal="center", vertical="center", wrap_text=False)
 def _border():
-    s = Side(style="thin", color="374151")
+    s = Side(style="thin", color="1F2937")
     return Border(left=s, right=s, top=s, bottom=s)
 
 
-def _create_workbook() -> openpyxl.Workbook:
+def _create_workbook():
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "TRADE LOG"
+    last = get_column_letter(len(ALL_COLS))
 
-    last_col = get_column_letter(len(ALL_COLS))
-
-    ws.merge_cells(f"A1:{last_col}1")
+    # Satır 1 — başlık
+    ws.merge_cells(f"A1:{last}1")
     ws["A1"] = "WLD/USDT — TRADE JOURNAL"
     ws["A1"].font = Font(bold=True, color=C_WHITE, name="Segoe UI", size=13)
-    ws["A1"].fill = _fill(C_HEADER_BG)
+    ws["A1"].fill = _fill(C_BG)
     ws["A1"].alignment = _center()
 
-    ws.merge_cells(f"A2:{last_col}2")
+    ws.merge_cells(f"A2:{last}2")
     ws["A2"] = "Paper Trading · 31x Kaldıraç · Hedef: 50 İşlem · Bot Geliştirme Verisi"
     ws["A2"].font = _font(color=C_GRAY)
-    ws["A2"].fill = _fill(C_HEADER_BG)
+    ws["A2"].fill = _fill(C_BG)
     ws["A2"].alignment = _center()
 
-    ws.merge_cells("A3:E3")
-    ws["A3"] = "📋 İŞLEM BİLGİLERİ"
+    # Satır 3 — bölüm başlıkları
+    n_info = len(INFO_COLS)
+    ws.merge_cells(f"A3:{get_column_letter(n_info)}3")
+    ws["A3"] = "📋 İŞLEM"
     ws["A3"].font = _font(bold=True)
-    ws["A3"].fill = _fill(C_INFO_BG)
+    ws["A3"].fill = _fill(C_INFO)
     ws["A3"].alignment = _center()
 
-    col = 6
+    col = n_info + 1
     for tf in TIMEFRAMES:
         end = col + len(IND_COLS) - 1
         sl, el = get_column_letter(col), get_column_letter(end)
@@ -89,84 +90,97 @@ def _create_workbook() -> openpyxl.Workbook:
         cell.alignment = _center()
         col = end + 1
 
+    # BTC bölümü
+    btc_col = get_column_letter(col)
+    ws[f"{btc_col}3"] = "BTC"
+    ws[f"{btc_col}3"].font = _font(bold=True)
+    ws[f"{btc_col}3"].fill = _fill(C_TF_BTC)
+    ws[f"{btc_col}3"].alignment = _center()
+
+    # Satır 4 — sütun isimleri
     for i, h in enumerate(ALL_COLS, start=1):
         cell = ws.cell(row=4, column=i, value=h)
-        if i <= 8:
-            cell.fill = _fill(C_INFO_BG)
-        else:
-            tf_idx = min((i - 9) // len(IND_COLS), len(TIMEFRAMES) - 1)
+        if i <= n_info:
+            cell.fill = _fill(C_INFO)
+        elif i <= n_info + len(IND_COLS) * len(TIMEFRAMES):
+            tf_idx = min((i - n_info - 1) // len(IND_COLS), len(TIMEFRAMES) - 1)
             cell.fill = _fill(TF_COLORS[TIMEFRAMES[tf_idx]])
+        else:
+            cell.fill = _fill(C_TF_BTC)
         cell.font = _font(bold=True, size=8)
         cell.alignment = _center()
         cell.border = _border()
 
-    for r, h in [(1, 22), (2, 16), (3, 18), (4, 16)]:
+    # Satır yükseklikleri
+    for r, h in [(1,22),(2,14),(3,16),(4,14)]:
         ws.row_dimensions[r].height = h
 
+    # Sütun genişlikleri
     for i in range(1, len(ALL_COLS) + 1):
         letter = get_column_letter(i)
-        if i <= 2:
-            ws.column_dimensions[letter].width = 10
-        elif i <= 5:
-            ws.column_dimensions[letter].width = 9
+        if i <= n_info:
+            widths = [10, 7, 7, 9, 7, 10]
+            ws.column_dimensions[letter].width = widths[i - 1]
+        elif i <= n_info + len(IND_COLS) * len(TIMEFRAMES):
+            ws.column_dimensions[letter].width = IND_W[(i - n_info - 1) % len(IND_COLS)]
         else:
-            ws.column_dimensions[letter].width = IND_WIDTHS[(i - 9) % len(IND_COLS)]
+            ws.column_dimensions[letter].width = 9
 
     ws.freeze_panes = "A5"
-    _add_legend(wb)
+    _legend(wb)
     return wb
 
 
-def _add_legend(wb):
+def _legend(wb):
     ws = wb.create_sheet("AÇIKLAMALAR")
     rows = [
-        ("RSI Diverjans",),
-        (None, "Bull", "Fiyat daha düşük dip yaparken RSI daha yüksek dip yaptı → olası yukarı dönüş"),
-        (None, "Bear", "Fiyat daha yüksek tepe yaparken RSI daha düşük tepe yaptı → olası aşağı dönüş"),
+        ("Don%",), (None,"0%","Alt bantta"),  (None,"50%","Ortada"), (None,"100%","Üst bantta"),
         (),
-        ("MACD",),
-        (None, "Y.ARTAN",  "Yeşil histogram büyüyor → alıcılar güçleniyor"),
-        (None, "Y.AZALAN", "Yeşil histogram küçülüyor → alıcılar yoruluyor"),
-        (None, "K.ARTAN",  "Kırmızı histogram büyüyor → satıcılar güçleniyor"),
-        (None, "K.AZALAN", "Kırmızı histogram küçülüyor → satıcılar yoruluyor"),
+        ("MACD Yön",),
+        (None,"Y.ARTAN","Yeşil hist büyüyor"), (None,"Y.AZALAN","Yeşil hist küçülüyor"),
+        (None,"K.ARTAN","Kırmızı hist büyüyor"), (None,"K.AZALAN","Kırmızı hist küçülüyor"),
         (),
-        ("StochRSI",),
-        (None, "OVERBOUGHT", "80 üzeri — aşırı alım"),
-        (None, "MID",        "20-80 arası — nötr"),
-        (None, "OVERSOLD",   "20 altı — aşırı satım"),
+        ("RSI Div",),
+        (None,"Bull","Fiyat düşük dip, RSI yüksek dip → yukarı dönüş"),
+        (None,"Bear","Fiyat yüksek tepe, RSI düşük tepe → aşağı dönüş"),
         (),
-        ("Fiyat/Hull",),
-        (None, "Y.ÜSTÜNDE", "Yeşil Hull + fiyat Hull üstünde"),
-        (None, "Y.ALTINDA", "Yeşil Hull + fiyat Hull altında"),
-        (None, "K.ÜSTÜNDE", "Kırmızı Hull + fiyat Hull üstünde"),
-        (None, "K.ALTINDA", "Kırmızı Hull + fiyat Hull altında"),
-        (),
-        ("UT Bot",),
-        (None, "K=1 (ATR=10)", "Daha hassas — daha fazla sinyal"),
-        (None, "K=2 (ATR=10)", "Daha az hassas — daha güvenilir sinyal"),
+        ("Seans (UTC)",),
+        (None,"Asya","00:00-08:00"), (None,"Avrupa","08:00-15:00"),
+        (None,"ABD","15:00-22:00"),  (None,"Sakin","22:00-00:00"),
     ]
     for r, data in enumerate(rows, start=1):
         for c, val in enumerate(data, start=1):
-            if val:
-                ws.cell(row=r, column=c, value=val)
+            if val: ws.cell(row=r, column=c, value=val)
 
 
-def _val_color(col_name: str, val) -> str | None:
-    if val in ("YEŞİL", "BUY", "WIN", "LONG", "YUKARI", "Y.ARTAN", "Bull"):
+def _val_color(col, val):
+    if val in ("YEŞİL","BUY","WIN","LONG","YUKARI","Y.ARTAN","Bull","Asya"):
         return C_GREEN
-    if val in ("KIRMIZI", "SELL", "LOSS", "SHORT", "AŞAĞI", "K.ARTAN", "Bear"):
+    if val in ("KIRMIZI","SELL","LOSS","SHORT","AŞAĞI","K.ARTAN","Bear"):
         return C_RED
-    if val in ("BE", "MID", "Y.AZALAN", "K.AZALAN", "YATAY"):
+    if val in ("BE","MID","Y.AZALAN","K.AZALAN","YATAY","-"):
         return C_YELLOW
-    if "rsi" in col_name.lower() and val not in (None, "-"):
+    if col in ("RSI","RSI Önc","Stoch K","Stoch D") and val not in (None,"-"):
         try:
             v = float(val)
             if v > 70: return C_RED
             if v < 30: return C_GREEN
+            return C_WHITE
         except (ValueError, TypeError):
             pass
-    if str(val).upper() == "OVERBOUGHT": return C_RED
-    if str(val).upper() == "OVERSOLD":   return C_GREEN
+    if col == "Don%" and val not in (None,"-"):
+        try:
+            v = float(val)
+            if v > 80: return C_RED
+            if v < 20: return C_GREEN
+            return C_WHITE
+        except (ValueError, TypeError):
+            pass
+    if col == "MACD Hist" and val not in (None,"-"):
+        try:
+            return C_GREEN if float(val) >= 0 else C_RED
+        except (ValueError, TypeError):
+            pass
     return None
 
 
@@ -179,32 +193,29 @@ def append_row(trade: dict):
         wb = _create_workbook()
         ws = wb["TRADE LOG"]
 
-    next_row = ws.max_row + 1
-    result = trade.get("result", "").upper()
-    row_color = {
-        "WIN":        C_ROW_WIN,
-        "LOSS":       C_ROW_LOSS,
-        "BE":         C_ROW_BE,
-        "VAZGEÇTİM": C_ROW_VAZ,
-    }.get(result, C_ROW_EVEN if next_row % 2 == 0 else C_ROW_ODD)
+    result = trade.get("result","").upper()
+    row_color = {"WIN":C_WIN,"LOSS":C_LOSS,"BE":C_BE,"VAZGEÇTİM":C_VAZ}.get(
+        result, C_ROW_E if ws.max_row % 2 == 0 else C_ROW_O)
     row_fill = _fill(row_color)
+    next_row = ws.max_row + 1
 
     values = [
-        trade.get("date", ""), trade.get("time", ""),
-        trade.get("direction", ""), trade.get("entry", ""),
-        trade.get("result", ""),
+        trade.get("date",""), trade.get("time",""),
+        trade.get("gun",""), trade.get("seans",""),
+        trade.get("direction",""), result,
     ]
     for tf in TIMEFRAMES:
-        tf_data = trade.get("indicators", {}).get(tf, {})
+        tf_data = trade.get("indicators",{}).get(tf,{})
         for k in IND_KEYS:
-            values.append(tf_data.get(k, "-"))
+            values.append(tf_data.get(k,"-"))
+    values.append(trade.get("btc_yon","-"))
 
     for col_i, (val, col_name) in enumerate(zip(values, ALL_COLS), start=1):
         cell = ws.cell(row=next_row, column=col_i, value=val)
-        cell.fill = row_fill
+        cell.fill  = row_fill
         cell.alignment = _center()
         cell.border = _border()
-        cell.font = _font(color=_val_color(col_name, val) or C_WHITE)
+        cell.font  = _font(color=_val_color(col_name, val) or C_WHITE)
 
-    ws.row_dimensions[next_row].height = 15
+    ws.row_dimensions[next_row].height = 14
     wb.save(EXCEL_FILE)
