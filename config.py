@@ -27,4 +27,9 @@ UT_ATR_PERIOD = 10
 UT_KEY1 = 1.0   # düşük hassasiyet
 UT_KEY2 = 2.0   # yüksek hassasiyet
 
-EXCEL_FILE = "WLD_Trade_Journal.xlsx"
+import os
+from datetime import datetime
+
+_desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+_tarih   = datetime.now().strftime("%Y_%m")          # örn: 2026_05
+EXCEL_FILE = os.path.join(_desktop, f"WLD_USDT_Trade_Journal_{_tarih}.xlsx")
