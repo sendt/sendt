@@ -24,12 +24,20 @@ TF_LABELS = {"1m": "1 DAKİKA", "5m": "5 DAKİKA", "15m": "15 DAKİKA", "1h": "1
 TF_COLORS = {"1m": C_TF_1M, "5m": C_TF_5M, "15m": C_TF_15M, "1h": C_TF_1H}
 
 INFO_COLS = ["Tarih", "Saat", "Yön", "Giriş", "Stop", "TP", "Sonuç", "R:R"]
-IND_COLS  = ["Donchian", "Fiyat/Hull", "RSI", "UT Bot K=1", "UT Bot K=2", "MACD", "StochRSI", "Trend"]
-IND_KEYS  = ["donchian", "fiyat_hull", "rsi", "ut_bot_k1", "ut_bot_k2", "macd", "stochrsi", "trend"]
-ALL_COLS  = INFO_COLS + IND_COLS * len(TIMEFRAMES)
-
-# Sütun genişlikleri (IND_COLS sırasıyla)
-IND_WIDTHS = [11, 16, 6, 9, 9, 13, 12, 9]
+IND_COLS  = [
+    "Donchian", "Fiyat/Hull",
+    "RSI", "RSI Önceki", "RSI Yön", "RSI Diverjans",
+    "UT Bot K=1", "UT Bot K=2",
+    "MACD", "StochRSI", "Trend",
+]
+IND_KEYS  = [
+    "donchian", "fiyat_hull",
+    "rsi", "rsi_prev", "rsi_yon", "rsi_div",
+    "ut_bot_k1", "ut_bot_k2",
+    "macd", "stochrsi", "trend",
+]
+IND_WIDTHS = [11, 16, 7, 9, 9, 12, 10, 10, 13, 12, 9]
+ALL_COLS   = INFO_COLS + IND_COLS * len(TIMEFRAMES)
 
 
 def _fill(c): return PatternFill("solid", fgColor=c)
@@ -59,7 +67,6 @@ def _create_workbook() -> openpyxl.Workbook:
     ws["A2"].fill = _fill(C_HEADER_BG)
     ws["A2"].alignment = _center()
 
-    # Satır 3: bölüm başlıkları
     ws.merge_cells("A3:H3")
     ws["A3"] = "📋 İŞLEM BİLGİLERİ"
     ws["A3"].font = _font(bold=True)
@@ -69,8 +76,7 @@ def _create_workbook() -> openpyxl.Workbook:
     col = 9
     for tf in TIMEFRAMES:
         end = col + len(IND_COLS) - 1
-        sl = get_column_letter(col)
-        el = get_column_letter(end)
+        sl, el = get_column_letter(col), get_column_letter(end)
         ws.merge_cells(f"{sl}3:{el}3")
         cell = ws[f"{sl}3"]
         cell.value = f"⏱ {TF_LABELS[tf]}"
@@ -79,7 +85,6 @@ def _create_workbook() -> openpyxl.Workbook:
         cell.alignment = _center()
         col = end + 1
 
-    # Satır 4: sütun isimleri
     for i, h in enumerate(ALL_COLS, start=1):
         cell = ws.cell(row=4, column=i, value=h)
         if i <= 8:
@@ -111,16 +116,20 @@ def _create_workbook() -> openpyxl.Workbook:
 def _add_legend(wb):
     ws = wb.create_sheet("AÇIKLAMALAR")
     rows = [
-        ("MACD Değerleri",),
+        ("RSI Diverjans",),
+        (None, "Bull", "Fiyat daha düşük dip yaparken RSI daha yüksek dip yaptı → olası yukarı dönüş"),
+        (None, "Bear", "Fiyat daha yüksek tepe yaparken RSI daha düşük tepe yaptı → olası aşağı dönüş"),
+        (),
+        ("MACD",),
         (None, "Y.ARTAN",  "Yeşil histogram büyüyor → alıcılar güçleniyor"),
         (None, "Y.AZALAN", "Yeşil histogram küçülüyor → alıcılar yoruluyor"),
         (None, "K.ARTAN",  "Kırmızı histogram büyüyor → satıcılar güçleniyor"),
         (None, "K.AZALAN", "Kırmızı histogram küçülüyor → satıcılar yoruluyor"),
         (),
         ("StochRSI",),
-        (None, "OVERBOUGHT", "80 üzeri — aşırı alım, düşüş ihtimali"),
+        (None, "OVERBOUGHT", "80 üzeri — aşırı alım"),
         (None, "MID",        "20-80 arası — nötr"),
-        (None, "OVERSOLD",   "20 altı — aşırı satım, yükseliş ihtimali"),
+        (None, "OVERSOLD",   "20 altı — aşırı satım"),
         (),
         ("Fiyat/Hull",),
         (None, "Y.ÜSTÜNDE", "Yeşil Hull + fiyat Hull üstünde"),
@@ -129,8 +138,8 @@ def _add_legend(wb):
         (None, "K.ALTINDA", "Kırmızı Hull + fiyat Hull altında"),
         (),
         ("UT Bot",),
-        (None, "K=1", "Key=1 ATR=10 — daha hassas, daha fazla sinyal"),
-        (None, "K=2", "Key=2 ATR=10 — daha az hassas, daha güvenilir sinyal"),
+        (None, "K=1 (ATR=10)", "Daha hassas — daha fazla sinyal"),
+        (None, "K=2 (ATR=10)", "Daha az hassas — daha güvenilir sinyal"),
     ]
     for r, data in enumerate(rows, start=1):
         for c, val in enumerate(data, start=1):
@@ -139,13 +148,13 @@ def _add_legend(wb):
 
 
 def _val_color(col_name: str, val) -> str | None:
-    if val in ("YEŞİL", "BUY", "WIN", "LONG", "YUKARI", "Y.ARTAN"):
+    if val in ("YEŞİL", "BUY", "WIN", "LONG", "YUKARI", "Y.ARTAN", "Bull"):
         return C_GREEN
-    if val in ("KIRMIZI", "SELL", "LOSS", "SHORT", "AŞAĞI", "K.ARTAN"):
+    if val in ("KIRMIZI", "SELL", "LOSS", "SHORT", "AŞAĞI", "K.ARTAN", "Bear"):
         return C_RED
     if val in ("BE", "MID", "Y.AZALAN", "K.AZALAN", "YATAY"):
         return C_YELLOW
-    if "rsi" in col_name.lower() and val is not None:
+    if "rsi" in col_name.lower() and val not in (None, "-"):
         try:
             v = float(val)
             if v > 70: return C_RED
@@ -158,6 +167,7 @@ def _val_color(col_name: str, val) -> str | None:
 
 
 def append_row(trade: dict):
+    os.makedirs(os.path.dirname(EXCEL_FILE), exist_ok=True)
     if os.path.isfile(EXCEL_FILE):
         wb = openpyxl.load_workbook(EXCEL_FILE)
         ws = wb["TRADE LOG"]
@@ -184,8 +194,7 @@ def append_row(trade: dict):
         cell.fill = row_fill
         cell.alignment = _center()
         cell.border = _border()
-        color = _val_color(col_name, val)
-        cell.font = _font(color=color or C_WHITE)
+        cell.font = _font(color=_val_color(col_name, val) or C_WHITE)
 
     ws.row_dimensions[next_row].height = 15
     wb.save(EXCEL_FILE)

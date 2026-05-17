@@ -153,9 +153,9 @@ def history():
                 "result": row[6] or "",
                 "rr": row[7] or "",
                 "ind_1m":  _row_slice(row, 8),
-                "ind_5m":  _row_slice(row, 16),
-                "ind_15m": _row_slice(row, 24),
-                "ind_1h":  _row_slice(row, 32),
+                "ind_5m":  _row_slice(row, 19),
+                "ind_15m": _row_slice(row, 30),
+                "ind_1h":  _row_slice(row, 41),
             })
         return jsonify(list(reversed(rows[-50:])))
     except Exception as e:
@@ -163,8 +163,9 @@ def history():
 
 
 def _row_slice(row, start):
-    keys = ["donchian", "fiyat_hull", "rsi", "ut_bot_k1", "ut_bot_k2", "macd", "stochrsi", "trend"]
-    vals = row[start:start + 8]
+    keys = ["donchian", "fiyat_hull", "rsi", "rsi_prev", "rsi_yon", "rsi_div",
+            "ut_bot_k1", "ut_bot_k2", "macd", "stochrsi", "trend"]
+    vals = row[start:start + 11]
     return {k: (v or "-") for k, v in zip(keys, vals)}
 
 

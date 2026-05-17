@@ -223,9 +223,9 @@ tr:hover td { background:#1c2128; }
       <thead><tr>
         <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th>
         <th>Stop</th><th>TP</th><th>Sonuç</th><th>R:R</th>
-        <th>1m Don.</th><th>1m RSI</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
-        <th>5m Don.</th><th>5m RSI</th><th>5m UT K=1</th><th>5m UT K=2</th>
-        <th>15m Don.</th><th>15m RSI</th><th>15m UT K=1</th><th>15m UT K=2</th>
+        <th>1m Don.</th><th>1m RSI</th><th>1m RSI Önc.</th><th>1m RSI Yön</th><th>1m Div.</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
+        <th>5m Don.</th><th>5m RSI</th><th>5m RSI Önc.</th><th>5m Div.</th><th>5m UT K=1</th><th>5m UT K=2</th>
+        <th>15m Don.</th><th>15m RSI</th><th>15m RSI Önc.</th><th>15m Div.</th><th>15m UT K=1</th><th>15m UT K=2</th>
       </tr></thead>
       <tbody id="histBody"><tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr></tbody>
     </table>
@@ -259,8 +259,8 @@ function status(elId, msg, type) {
 function colorVal(key, val) {
   if (!val || val === '-') return `<span class="gray">—</span>`;
   const v = String(val);
-  const green = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN'];
-  const red   = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN'];
+  const green = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN','Bull'];
+  const red   = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN','Bear'];
   const yel   = ['BE','MID','-','Y.AZALAN','K.AZALAN','YATAY'];
   if (green.some(x => v.includes(x))) return `<span class="green">${v}</span>`;
   if (red.some(x => v.includes(x)))   return `<span class="red">${v}</span>`;
@@ -277,7 +277,8 @@ function colorVal(key, val) {
 
 function renderTf(tfId, data) {
   const labels = {
-    donchian:'Donchian', fiyat_hull:'Fiyat/Hull', rsi:'RSI',
+    donchian:'Donchian', fiyat_hull:'Fiyat/Hull',
+    rsi:'RSI', rsi_prev:'RSI Önceki', rsi_yon:'RSI Yön', rsi_div:'RSI Diverjans',
     ut_bot_k1:'UT Bot K=1', ut_bot_k2:'UT Bot K=2',
     macd:'MACD', stochrsi:'StochRSI', trend:'Trend'
   };
@@ -371,7 +372,7 @@ async function loadHistory() {
     const res = await fetch('/history');
     const rows = await res.json();
     const tbody = document.getElementById('histBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="21" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="28" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
     tbody.innerHTML = rows.map(r => `<tr>
       <td>${r.date}</td><td>${r.time}</td>
       <td>${dirBadge(r.direction)}</td>
@@ -379,15 +380,22 @@ async function loadHistory() {
       <td>${resBadge(r.result)}</td><td>${r.rr||'—'}</td>
       <td>${colorVal('donchian',  r.ind_1m?.donchian)}</td>
       <td>${colorVal('rsi',       r.ind_1m?.rsi)}</td>
+      <td>${colorVal('rsi',       r.ind_1m?.rsi_prev)}</td>
+      <td>${colorVal('rsi_yon',   r.ind_1m?.rsi_yon)}</td>
+      <td>${colorVal('rsi_div',   r.ind_1m?.rsi_div)}</td>
       <td>${colorVal('ut_bot_k1', r.ind_1m?.ut_bot_k1)}</td>
       <td>${colorVal('ut_bot_k2', r.ind_1m?.ut_bot_k2)}</td>
       <td>${colorVal('macd',      r.ind_1m?.macd)}</td>
       <td>${colorVal('donchian',  r.ind_5m?.donchian)}</td>
       <td>${colorVal('rsi',       r.ind_5m?.rsi)}</td>
+      <td>${colorVal('rsi',       r.ind_5m?.rsi_prev)}</td>
+      <td>${colorVal('rsi_div',   r.ind_5m?.rsi_div)}</td>
       <td>${colorVal('ut_bot_k1', r.ind_5m?.ut_bot_k1)}</td>
       <td>${colorVal('ut_bot_k2', r.ind_5m?.ut_bot_k2)}</td>
       <td>${colorVal('donchian',  r.ind_15m?.donchian)}</td>
       <td>${colorVal('rsi',       r.ind_15m?.rsi)}</td>
+      <td>${colorVal('rsi',       r.ind_15m?.rsi_prev)}</td>
+      <td>${colorVal('rsi_div',   r.ind_15m?.rsi_div)}</td>
       <td>${colorVal('ut_bot_k1', r.ind_15m?.ut_bot_k1)}</td>
       <td>${colorVal('ut_bot_k2', r.ind_15m?.ut_bot_k2)}</td>
     </tr>`).join('');

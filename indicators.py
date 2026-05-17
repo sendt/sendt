@@ -18,6 +18,10 @@ def _r(val, decimals=2):
 
 # ── RSI (period=6, kaynak=OHLC4, EMA smooth=10) ──────────────────────────────
 
+def _ohlc4(df: pd.DataFrame) -> pd.Series:
+    return (df["open"] + df["high"] + df["low"] + df["close"]) / 4
+
+
 def _rsi_series(source: pd.Series, period: int) -> pd.Series:
     delta = source.diff()
     gain = delta.clip(lower=0)
@@ -28,8 +32,35 @@ def _rsi_series(source: pd.Series, period: int) -> pd.Series:
     return 100 - 100 / (1 + rs)
 
 
-def _ohlc4(df: pd.DataFrame) -> pd.Series:
-    return (df["open"] + df["high"] + df["low"] + df["close"]) / 4
+def _divergence(close: pd.Series, rsi: pd.Series, pivot_bars=5, lookback=60) -> str:
+    """Fiyat ile RSI arasındaki regular diverjansı tespit eder."""
+    c = close.iloc[-lookback:].to_numpy()
+    r = rsi.iloc[-lookback:].to_numpy()
+    n = len(c)
+
+    lows, highs = [], []
+    for i in range(pivot_bars, n - pivot_bars):
+        if np.isnan(r[i]):
+            continue
+        w_c = c[i - pivot_bars: i + pivot_bars + 1]
+        if c[i] == w_c.min():
+            lows.append((i, c[i], r[i]))
+        if c[i] == w_c.max():
+            highs.append((i, c[i], r[i]))
+
+    # Bull diverjans: fiyat daha düşük dip, RSI daha yüksek dip
+    if len(lows) >= 2:
+        p1, p2 = lows[-2], lows[-1]
+        if p2[1] < p1[1] and p2[2] > p1[2]:
+            return "Bull"
+
+    # Bear diverjans: fiyat daha yüksek tepe, RSI daha düşük tepe
+    if len(highs) >= 2:
+        p1, p2 = highs[-2], highs[-1]
+        if p2[1] > p1[1] and p2[2] < p1[2]:
+            return "Bear"
+
+    return "-"
 
 
 # ── MACD ─────────────────────────────────────────────────────────────────────
@@ -62,7 +93,7 @@ def _atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(com=period - 1, min_periods=period).mean()
 
 
-# ── UT Bot trail hesabı ───────────────────────────────────────────────────────
+# ── UT Bot ────────────────────────────────────────────────────────────────────
 
 def _ut_signal(close_arr: np.ndarray, nloss_arr: np.ndarray) -> str:
     trail = np.zeros(len(close_arr))
@@ -118,43 +149,47 @@ def get_labels(df: pd.DataFrame) -> dict:
     ohlc4 = _ohlc4(df)
 
     # RSI: OHLC4 kaynağı, period=6, EMA(10) smooth
-    rsi_raw = _rsi_series(ohlc4, RSI_PERIOD)
+    rsi_raw    = _rsi_series(ohlc4, RSI_PERIOD)
     rsi_smooth = rsi_raw.ewm(span=RSI_SMOOTH_PERIOD, adjust=False).mean()
-    rsi_val = _r(rsi_smooth.iloc[-1], 0)
+
+    rsi_now  = _r(rsi_smooth.iloc[-1], 1)
+    rsi_prev = _r(rsi_smooth.iloc[-2], 1)
+    rsi_yon  = "YUKARI" if rsi_smooth.iloc[-1] > rsi_smooth.iloc[-2] else "AŞAĞI"
+    rsi_div  = _divergence(close, rsi_smooth)
 
     # MACD
     _, _, hist_s = _macd_series(close)
     hist_now  = hist_s.iloc[-1]
     hist_prev = hist_s.iloc[-2]
-    macd_lbl = _macd_label(
+    macd_lbl  = _macd_label(
         None if np.isnan(hist_now)  else float(hist_now),
         None if np.isnan(hist_prev) else float(hist_prev),
     )
 
     # Stoch RSI
-    rsi2 = _rsi_series(close, STOCHRSI_RSI_PERIOD)
-    rmin = rsi2.rolling(STOCHRSI_STOCH_PERIOD).min()
-    rmax = rsi2.rolling(STOCHRSI_STOCH_PERIOD).max()
+    rsi2  = _rsi_series(close, STOCHRSI_RSI_PERIOD)
+    rmin  = rsi2.rolling(STOCHRSI_STOCH_PERIOD).min()
+    rmax  = rsi2.rolling(STOCHRSI_STOCH_PERIOD).max()
     stoch = (rsi2 - rmin) / (rmax - rmin) * 100
     k_val = _r(stoch.rolling(STOCHRSI_K).mean().iloc[-1], 1)
     stoch_lbl = _stochrsi_label(k_val)
 
     # Hull Suite
-    hma_s = _hma(close, HMA_PERIOD)
+    hma_s    = _hma(close, HMA_PERIOD)
     hma_val  = float(hma_s.iloc[-1])
     hma_prev = float(hma_s.iloc[-2])
-    hull_dir = "UP" if hma_val > hma_prev else "DOWN"
+    hull_dir  = "UP" if hma_val > hma_prev else "DOWN"
     trend_lbl = "YUKARI" if hull_dir == "UP" else "AŞAĞI"
     fiyat_hull_lbl = _hull_fiyat_label(hull_dir, float(close.iloc[-1]), hma_val)
 
     # Donchian
     upper = df["high"].rolling(DONCHIAN_PERIOD).max()
     lower = df["low"].rolling(DONCHIAN_PERIOD).min()
-    mid = (upper + lower) / 2
+    mid   = (upper + lower) / 2
     donchian_lbl = "YEŞİL" if float(close.iloc[-1]) > float(mid.iloc[-1]) else "KIRMIZI"
 
     # UT Bot — iki sensitivity
-    atr_s = _atr(df, UT_ATR_PERIOD)
+    atr_s     = _atr(df, UT_ATR_PERIOD)
     close_arr = close.to_numpy()
     ut_lbl_k1 = _ut_signal(close_arr, (atr_s * UT_KEY1).to_numpy())
     ut_lbl_k2 = _ut_signal(close_arr, (atr_s * UT_KEY2).to_numpy())
@@ -162,7 +197,10 @@ def get_labels(df: pd.DataFrame) -> dict:
     return {
         "donchian":   donchian_lbl,
         "fiyat_hull": fiyat_hull_lbl,
-        "rsi":        rsi_val,
+        "rsi":        rsi_now,
+        "rsi_prev":   rsi_prev,
+        "rsi_yon":    rsi_yon,
+        "rsi_div":    rsi_div,
         "ut_bot_k1":  ut_lbl_k1,
         "ut_bot_k2":  ut_lbl_k2,
         "macd":       macd_lbl,
