@@ -32,4 +32,4 @@ from datetime import datetime
 
 _desktop = os.path.join(os.path.expanduser("~"), "Desktop")
 _tarih   = datetime.now().strftime("%Y_%m")          # örn: 2026_05
-EXCEL_FILE = os.path.join(_desktop, f"degerler_{_tarih}.xlsx")
+EXCEL_FILE = os.path.join(_desktop, f"WLD_USDT_Trade_Journal_{_tarih}.xlsx")
