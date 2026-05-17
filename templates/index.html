@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WLD/USDT — Trade Logger</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #58a6ff;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6e7681;
+    margin-bottom: 20px;
+  }
+  .price-bar {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #f0f6fc;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .price-bar span { color: #8b949e; font-size: 1rem; }
+  .time-bar {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #6e7681;
+    margin-bottom: 24px;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .btn {
+    flex: 1;
+    max-width: 220px;
+    padding: 18px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); opacity: .85; }
+  .btn-open  { background: #238636; color: #fff; }
+  .btn-close { background: #b91c1c; color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .note-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .note-input {
+    flex: 1;
+    max-width: 460px;
+    padding: 10px 14px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #c9d1d9;
+    font-size: 0.9rem;
+  }
+  .note-input:focus { outline: none; border-color: #58a6ff; }
+
+  .status-bar {
+    text-align: center;
+    min-height: 22px;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    transition: color .3s;
+  }
+  .status-ok    { color: #3fb950; }
+  .status-error { color: #f85149; }
+  .status-loading { color: #d29922; }
+
+  .trade-id-row {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #6e7681;
+    margin-bottom: 26px;
+  }
+  .trade-id-row code {
+    background: #161b22;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #58a6ff;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .card-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #58a6ff;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 6px;
+  }
+  .ind-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 0.83rem;
+    border-bottom: 1px solid #21262d22;
+  }
+  .ind-label { color: #8b949e; }
+  .ind-val   { font-weight: 600; font-family: monospace; }
+  .up    { color: #3fb950; }
+  .down  { color: #f85149; }
+  .bull  { color: #3fb950; }
+  .bear  { color: #f85149; }
+  .buy   { color: #3fb950; font-weight: 700; }
+  .sell  { color: #f85149; font-weight: 700; }
+  .neut  { color: #8b949e; }
+  .ob    { color: #f85149; }   /* overbought */
+  .os    { color: #3fb950; }   /* oversold */
+  .norm  { color: #e6edf3; }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #6e7681;
+    font-size: 0.9rem;
+  }
+
+  .history-title {
+    max-width: 860px;
+    margin: 28px auto 10px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6e7681;
+    padding-left: 4px;
+  }
+  .history-table {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.78rem;
+  }
+  .history-table table { width: 100%; border-collapse: collapse; }
+  .history-table th {
+    background: #1c2128;
+    padding: 8px 12px;
+    text-align: left;
+    color: #8b949e;
+    font-weight: 500;
+  }
+  .history-table td { padding: 7px 12px; border-top: 1px solid #21262d; }
+  .history-table tr:hover td { background: #1c2128; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.72rem;
+  }
+  .badge-open  { background: #23863622; color: #3fb950; border: 1px solid #238636; }
+  .badge-close { background: #b91c1c22; color: #f85149; border: 1px solid #b91c1c; }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    .buttons { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<h1>WLD / USDT — Trade Logger</h1>
+<div class="subtitle">1m · 5m · 15m indikatörleri otomatik kaydeder</div>
+
+<div class="price-bar" id="priceBar">— <span>USDT</span></div>
+<div class="time-bar" id="timeBar">—</div>
+
+<div class="note-row">
+  <input class="note-input" id="noteInput" type="text" placeholder="Not ekle (opsiyonel): örn. 'destek bölgesi long'">
+</div>
+
+<div class="buttons">
+  <button class="btn btn-open"  id="btnOpen"  onclick="doAction('open')">▶ İŞLEM AÇ</button>
+  <button class="btn btn-close" id="btnClose" onclick="doAction('close')">◀ İŞLEM KAPAT</button>
+</div>
+
+<div class="status-bar" id="statusBar"></div>
+<div class="trade-id-row" id="tradeIdRow"></div>
+
+<div class="grid" id="indGrid">
+  <div class="empty-state">Henüz veri yok — işlem açmak için butona bas.</div>
+</div>
+
+<div class="history-title">Son İşlemler</div>
+<div class="history-table">
+  <table>
+    <thead><tr>
+      <th>Trade ID</th><th>İşlem</th><th>Zaman (UTC)</th><th>Fiyat</th>
+      <th>1m RSI</th><th>5m RSI</th><th>15m RSI</th>
+      <th>1m UT Bot</th><th>5m UT Bot</th>
+      <th>Not</th>
+    </tr></thead>
+    <tbody id="histBody"></tbody>
+  </table>
+</div>
+
+<script>
+let currentTradeId = null;
+let lastData = null;
+
+function setStatus(msg, type) {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg;
+  el.className = 'status-bar status-' + type;
+}
+
+function colorRsi(v) {
+  if (v === null || v === undefined) return '<span class="neut">—</span>';
+  const cls = v > 70 ? 'ob' : v < 30 ? 'os' : 'norm';
+  return `<span class="${cls}">${v}</span>`;
+}
+function colorDir(v) {
+  if (!v) return '—';
+  return v === 'UP' ? `<span class="up">▲ UP</span>` : `<span class="down">▼ DOWN</span>`;
+}
+function colorTrend(v) {
+  if (!v) return '—';
+  return v === 'BULL' ? `<span class="bull">● BULL</span>` : `<span class="bear">● BEAR</span>`;
+}
+function colorUT(v) {
+  if (!v) return '—';
+  const cls = v === 'BUY' ? 'buy' : v === 'SELL' ? 'sell' : 'neut';
+  return `<span class="${cls}">${v}</span>`;
+}
+function colorMacdHist(v) {
+  if (v === null || v === undefined) return '—';
+  const cls = v > 0 ? 'up' : 'down';
+  return `<span class="${cls}">${v}</span>`;
+}
+
+function renderGrid(data) {
+  const tfs = ['1m', '5m', '15m'];
+  const grid = document.getElementById('indGrid');
+  grid.innerHTML = '';
+
+  tfs.forEach(tf => {
+    const d = data[tf];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-title">${tf}</div>
+      <div class="ind-row"><span class="ind-label">RSI</span><span class="ind-val">${colorRsi(d.rsi)}</span></div>
+      <div class="ind-row"><span class="ind-label">MACD</span><span class="ind-val">${d.macd}</span></div>
+      <div class="ind-row"><span class="ind-label">MACD Signal</span><span class="ind-val">${d.macd_signal}</span></div>
+      <div class="ind-row"><span class="ind-label">MACD Hist</span><span class="ind-val">${colorMacdHist(d.macd_hist)}</span></div>
+      <div class="ind-row"><span class="ind-label">StochRSI K</span><span class="ind-val">${colorRsi(d.stochrsi_k)}</span></div>
+      <div class="ind-row"><span class="ind-label">StochRSI D</span><span class="ind-val">${d.stochrsi_d}</span></div>
+      <div class="ind-row"><span class="ind-label">Hull Suite</span><span class="ind-val">${d.hull_hma}</span></div>
+      <div class="ind-row"><span class="ind-label">Hull Yön</span><span class="ind-val">${colorDir(d.hull_dir)}</span></div>
+      <div class="ind-row"><span class="ind-label">Donchian Üst</span><span class="ind-val">${d.donchian_upper}</span></div>
+      <div class="ind-row"><span class="ind-label">Donchian Orta</span><span class="ind-val">${d.donchian_mid}</span></div>
+      <div class="ind-row"><span class="ind-label">Donchian Alt</span><span class="ind-val">${d.donchian_lower}</span></div>
+      <div class="ind-row"><span class="ind-label">Donchian Trend</span><span class="ind-val">${colorTrend(d.donchian_trend)}</span></div>
+      <div class="ind-row"><span class="ind-label">UT Trail Stop</span><span class="ind-val">${d.ut_trail_stop}</span></div>
+      <div class="ind-row"><span class="ind-label">UT Sinyal</span><span class="ind-val">${colorUT(d.ut_signal)}</span></div>
+      <div class="ind-row"><span class="ind-label">Fiyat Trail Üstünde</span><span class="ind-val">${d.ut_above_trail ? '<span class="up">Evet</span>' : '<span class="down">Hayır</span>'}</span></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function addHistRow(row) {
+  const tbody = document.getElementById('histBody');
+  const tr = document.createElement('tr');
+  const badgeCls = row.action === 'OPEN' ? 'badge-open' : 'badge-close';
+  const badgeTxt = row.action === 'OPEN' ? 'AÇ' : 'KAPAT';
+  tr.innerHTML = `
+    <td><code style="color:#58a6ff;font-size:0.75rem">${row.trade_id}</code></td>
+    <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+    <td>${row.datetime_utc}</td>
+    <td>${row.price ? Number(row.price).toFixed(4) : '—'}</td>
+    <td>${colorRsi(row['1m_rsi'])}</td>
+    <td>${colorRsi(row['5m_rsi'])}</td>
+    <td>${colorRsi(row['15m_rsi'])}</td>
+    <td>${colorUT(row['1m_ut_signal'])}</td>
+    <td>${colorUT(row['5m_ut_signal'])}</td>
+    <td style="color:#8b949e">${row.notes || ''}</td>
+  `;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+async function doAction(action) {
+  const note = document.getElementById('noteInput').value.trim();
+  const tradeId = action === 'open'
+    ? 'T' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14)
+    : currentTradeId;
+
+  document.getElementById('btnOpen').disabled = true;
+  document.getElementById('btnClose').disabled = true;
+  setStatus('Binance\'ten veri çekiliyor...', 'loading');
+
+  try {
+    const res = await fetch('/capture', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action, trade_id: tradeId, note})
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      setStatus('Hata: ' + data.error, 'error');
+      return;
+    }
+
+    lastData = data.indicators;
+    if (action === 'open') currentTradeId = data.trade_id;
+
+    document.getElementById('priceBar').innerHTML = `${Number(data.price).toFixed(4)} <span>USDT</span>`;
+    document.getElementById('timeBar').textContent = data.datetime_utc + ' UTC';
+    document.getElementById('tradeIdRow').innerHTML = action === 'open'
+      ? `İşlem ID: <code>${data.trade_id}</code> — kapatırken otomatik kullanılır`
+      : `İşlem <code>${data.trade_id}</code> kapatıldı ve kaydedildi`;
+
+    renderGrid(data.indicators);
+    addHistRow({...data, action: action.toUpperCase()});
+
+    const msg = action === 'open' ? '✓ Açılış verileri kaydedildi' : '✓ Kapanış verileri kaydedildi';
+    setStatus(msg, 'ok');
+    document.getElementById('noteInput').value = '';
+
+  } catch (e) {
+    setStatus('Bağlantı hatası: ' + e.message, 'error');
+  } finally {
+    document.getElementById('btnOpen').disabled = false;
+    document.getElementById('btnClose').disabled = false;
+  }
+}
+
+// Sayfa yüklenince geçmiş işlemleri çek
+async function loadHistory() {
+  try {
+    const res = await fetch('/history');
+    const rows = await res.json();
+    rows.forEach(r => addHistRow(r));
+  } catch(e) {}
+}
+loadHistory();
+</script>
+</body>
+</html>
