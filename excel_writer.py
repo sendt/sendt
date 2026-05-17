@@ -14,6 +14,10 @@ C_TF_1H     = "3B2A50"
 C_INFO_BG   = "111827"
 C_ROW_EVEN  = "1A2233"
 C_ROW_ODD   = "111827"
+C_ROW_WIN   = "0F2D1A"   # koyu yeşil satır
+C_ROW_LOSS  = "2D0F0F"   # koyu kırmızı satır
+C_ROW_BE    = "2D260A"   # koyu sarı satır
+C_ROW_VAZ   = "1E1E2A"   # koyu gri satır
 C_GREEN     = "22C55E"
 C_RED       = "EF4444"
 C_YELLOW    = "EAB308"
@@ -176,7 +180,14 @@ def append_row(trade: dict):
         ws = wb["TRADE LOG"]
 
     next_row = ws.max_row + 1
-    row_fill = _fill(C_ROW_EVEN if next_row % 2 == 0 else C_ROW_ODD)
+    result = trade.get("result", "").upper()
+    row_color = {
+        "WIN":        C_ROW_WIN,
+        "LOSS":       C_ROW_LOSS,
+        "BE":         C_ROW_BE,
+        "VAZGEÇTİM": C_ROW_VAZ,
+    }.get(result, C_ROW_EVEN if next_row % 2 == 0 else C_ROW_ODD)
+    row_fill = _fill(row_color)
 
     values = [
         trade.get("date", ""), trade.get("time", ""),
