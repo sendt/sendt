@@ -23,7 +23,7 @@ C_GRAY      = "9CA3AF"
 TF_LABELS = {"1m": "1 DAKİKA", "5m": "5 DAKİKA", "15m": "15 DAKİKA", "1h": "1 SAAT (OPS.)"}
 TF_COLORS = {"1m": C_TF_1M, "5m": C_TF_5M, "15m": C_TF_15M, "1h": C_TF_1H}
 
-INFO_COLS = ["Tarih", "Saat", "Yön", "Giriş", "Stop", "TP", "Sonuç", "R:R"]
+INFO_COLS = ["Tarih", "Saat", "Yön", "Giriş", "Sonuç"]
 IND_COLS  = [
     "Donchian", "Fiyat/Hull",
     "RSI", "RSI Önceki", "RSI Yön", "RSI Diverjans",
@@ -67,13 +67,13 @@ def _create_workbook() -> openpyxl.Workbook:
     ws["A2"].fill = _fill(C_HEADER_BG)
     ws["A2"].alignment = _center()
 
-    ws.merge_cells("A3:H3")
+    ws.merge_cells("A3:E3")
     ws["A3"] = "📋 İŞLEM BİLGİLERİ"
     ws["A3"].font = _font(bold=True)
     ws["A3"].fill = _fill(C_INFO_BG)
     ws["A3"].alignment = _center()
 
-    col = 9
+    col = 6
     for tf in TIMEFRAMES:
         end = col + len(IND_COLS) - 1
         sl, el = get_column_letter(col), get_column_letter(end)
@@ -103,7 +103,7 @@ def _create_workbook() -> openpyxl.Workbook:
         letter = get_column_letter(i)
         if i <= 2:
             ws.column_dimensions[letter].width = 10
-        elif i <= 8:
+        elif i <= 5:
             ws.column_dimensions[letter].width = 9
         else:
             ws.column_dimensions[letter].width = IND_WIDTHS[(i - 9) % len(IND_COLS)]
@@ -181,8 +181,7 @@ def append_row(trade: dict):
     values = [
         trade.get("date", ""), trade.get("time", ""),
         trade.get("direction", ""), trade.get("entry", ""),
-        trade.get("stop", ""), trade.get("tp", ""),
-        trade.get("result", ""), trade.get("rr", ""),
+        trade.get("result", ""),
     ]
     for tf in TIMEFRAMES:
         tf_data = trade.get("indicators", {}).get(tf, {})

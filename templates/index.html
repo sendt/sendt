@@ -71,6 +71,7 @@ h1 { text-align:center; font-size:1rem; color:#2563eb; letter-spacing:2px; text-
 .res-btn.active-win  { background:#dcfce7; border-color:#16a34a; color:#15803d; }
 .res-btn.active-loss { background:#fee2e2; border-color:#dc2626; color:#b91c1c; }
 .res-btn.active-be   { background:#fef3c7; border-color:#d97706; color:#b45309; }
+.res-btn.active-vaz  { background:#f1f5f9; border-color:#64748b; color:#475569; }
 
 /* Status */
 .status-bar {
@@ -133,6 +134,7 @@ tr:hover td { background:#f8fafc; }
 .b-win   { background:#dcfce7; color:#15803d; }
 .b-loss  { background:#fee2e2; color:#b91c1c; }
 .b-be    { background:#fef3c7; color:#b45309; }
+.b-vaz   { background:#f1f5f9; color:#475569; }
 
 .empty-hint { text-align:center; padding:30px; color:#94a3b8; font-size:0.85rem; }
 
@@ -163,17 +165,6 @@ tr:hover td { background:#f8fafc; }
       </div>
     </div>
 
-    <div class="field-row">
-      <div class="field">
-        <label>Stop Loss</label>
-        <input id="inpStop" type="number" step="0.0001" placeholder="0.0000">
-      </div>
-      <div class="field">
-        <label>Take Profit</label>
-        <input id="inpTP" type="number" step="0.0001" placeholder="0.0000">
-      </div>
-    </div>
-
     <button class="btn btn-open" id="btnOpen" onclick="openTrade()">▶ İŞLEM AÇ &amp; KAYDET</button>
     <div class="status-bar" id="statusOpen"></div>
     <div class="trade-badge" id="tradeBadge">
@@ -191,6 +182,7 @@ tr:hover td { background:#f8fafc; }
         <button class="res-btn" id="resWin"  onclick="setResult('WIN')">WIN</button>
         <button class="res-btn" id="resLoss" onclick="setResult('LOSS')">LOSS</button>
         <button class="res-btn" id="resBe"   onclick="setResult('BE')">BE</button>
+        <button class="res-btn" id="resVaz"  onclick="setResult('VAZGEÇTİM')">VAZGEÇTİM</button>
       </div>
     </div>
 
@@ -222,9 +214,8 @@ tr:hover td { background:#f8fafc; }
   <div class="hist-table-wrap">
     <table>
       <thead><tr>
-        <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th>
-        <th>Stop</th><th>TP</th><th>Sonuç</th><th>R:R</th>
-        <th>1m Don.</th><th>1m RSI</th><th>1m RSI Önc.</th><th>1m RSI Yön</th><th>1m Div.</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
+        <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th><th>Sonuç</th>
+        <th>1m Don.</th><th>1m RSI</th><th>1m RSI Önc.</th><th>1m Div.</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
         <th>5m Don.</th><th>5m RSI</th><th>5m RSI Önc.</th><th>5m Div.</th><th>5m UT K=1</th><th>5m UT K=2</th>
         <th>15m Don.</th><th>15m RSI</th><th>15m RSI Önc.</th><th>15m Div.</th><th>15m UT K=1</th><th>15m UT K=2</th>
       </tr></thead>
@@ -246,9 +237,10 @@ function setDir(d) {
 
 function setResult(r) {
   currentResult = r;
-  document.getElementById('resWin').className  = 'res-btn' + (r==='WIN'  ? ' active-win'  : '');
-  document.getElementById('resLoss').className = 'res-btn' + (r==='LOSS' ? ' active-loss' : '');
-  document.getElementById('resBe').className   = 'res-btn' + (r==='BE'   ? ' active-be'   : '');
+  document.getElementById('resWin').className  = 'res-btn' + (r==='WIN'        ? ' active-win'  : '');
+  document.getElementById('resLoss').className = 'res-btn' + (r==='LOSS'       ? ' active-loss' : '');
+  document.getElementById('resBe').className   = 'res-btn' + (r==='BE'         ? ' active-be'   : '');
+  document.getElementById('resVaz').className  = 'res-btn' + (r==='VAZGEÇTİM' ? ' active-vaz'  : '');
 }
 
 function status(elId, msg, type) {
@@ -301,15 +293,13 @@ function renderIndicators(indicators) {
 }
 
 async function openTrade() {
-  const stop = document.getElementById('inpStop').value;
-  const tp   = document.getElementById('inpTP').value;
   document.getElementById('btnOpen').disabled = true;
-  status('statusOpen', 'Binance\'ten veri çekiliyor...', 'load');
+  status('statusOpen', 'Veri çekiliyor...', 'load');
 
   try {
     const res = await fetch('/open_trade', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ direction: currentDir, stop, tp })
+      body: JSON.stringify({ direction: currentDir })
     });
     const data = await res.json();
     if (data.error) { status('statusOpen', 'Hata: ' + data.error, 'err'); return; }
@@ -345,7 +335,7 @@ async function closeTrade() {
     if (data.error) { status('statusClose', 'Hata: ' + data.error, 'err'); return; }
 
     renderIndicators(data.indicators);
-    status('statusClose', `✓ Excel'e kaydedildi — Kapanış: ${data.price} USDT  R:R ${data.rr}`, 'ok');
+    status('statusClose', `✓ Excel'e kaydedildi — Kapanış: ${data.price} USDT`, 'ok');
     document.getElementById('tradeBadge').style.display = 'none';
     currentTradeId = '';
     document.getElementById('inpCloseId').value = '';
@@ -364,7 +354,7 @@ function dirBadge(d) {
     : `<span class="badge b-short">SHORT</span>`;
 }
 function resBadge(r) {
-  const map = {WIN:'b-win', LOSS:'b-loss', BE:'b-be'};
+  const map = {WIN:'b-win', LOSS:'b-loss', BE:'b-be', 'VAZGEÇTİM':'b-vaz'};
   return r ? `<span class="badge ${map[r]||''}">${r}</span>` : '—';
 }
 
@@ -373,12 +363,11 @@ async function loadHistory() {
     const res = await fetch('/history');
     const rows = await res.json();
     const tbody = document.getElementById('histBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="28" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="23" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
     tbody.innerHTML = rows.map(r => `<tr>
       <td>${r.date}</td><td>${r.time}</td>
       <td>${dirBadge(r.direction)}</td>
-      <td>${r.entry}</td><td>${r.stop||'—'}</td><td>${r.tp||'—'}</td>
-      <td>${resBadge(r.result)}</td><td>${r.rr||'—'}</td>
+      <td>${r.entry}</td><td>${resBadge(r.result)}</td>
       <td>${colorVal('donchian',  r.ind_1m?.donchian)}</td>
       <td>${colorVal('rsi',       r.ind_1m?.rsi)}</td>
       <td>${colorVal('rsi',       r.ind_1m?.rsi_prev)}</td>
