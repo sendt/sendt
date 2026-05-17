@@ -223,9 +223,9 @@ tr:hover td { background:#1c2128; }
       <thead><tr>
         <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th>
         <th>Stop</th><th>TP</th><th>Sonuç</th><th>R:R</th>
-        <th>1m Don.</th><th>1m RSI</th><th>1m UT</th><th>1m MACD</th>
-        <th>5m Don.</th><th>5m RSI</th><th>5m UT</th>
-        <th>15m Don.</th><th>15m RSI</th><th>15m UT</th>
+        <th>1m Don.</th><th>1m RSI</th><th>1m UT K=1</th><th>1m UT K=2</th><th>1m MACD</th>
+        <th>5m Don.</th><th>5m RSI</th><th>5m UT K=1</th><th>5m UT K=2</th>
+        <th>15m Don.</th><th>15m RSI</th><th>15m UT K=1</th><th>15m UT K=2</th>
       </tr></thead>
       <tbody id="histBody"><tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr></tbody>
     </table>
@@ -278,7 +278,8 @@ function colorVal(key, val) {
 function renderTf(tfId, data) {
   const labels = {
     donchian:'Donchian', fiyat_hull:'Fiyat/Hull', rsi:'RSI',
-    ut_bot:'UT Bot', macd:'MACD', stochrsi:'StochRSI', trend:'Trend'
+    ut_bot_k1:'UT Bot K=1', ut_bot_k2:'UT Bot K=2',
+    macd:'MACD', stochrsi:'StochRSI', trend:'Trend'
   };
   let html = '';
   for (const [k, lbl] of Object.entries(labels)) {
@@ -370,22 +371,25 @@ async function loadHistory() {
     const res = await fetch('/history');
     const rows = await res.json();
     const tbody = document.getElementById('histBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="21" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
     tbody.innerHTML = rows.map(r => `<tr>
       <td>${r.date}</td><td>${r.time}</td>
       <td>${dirBadge(r.direction)}</td>
       <td>${r.entry}</td><td>${r.stop||'—'}</td><td>${r.tp||'—'}</td>
       <td>${resBadge(r.result)}</td><td>${r.rr||'—'}</td>
-      <td>${colorVal('donchian', r.ind_1m?.donchian)}</td>
-      <td>${colorVal('rsi',      r.ind_1m?.rsi)}</td>
-      <td>${colorVal('ut_bot',   r.ind_1m?.ut_bot)}</td>
-      <td>${colorVal('macd',     r.ind_1m?.macd)}</td>
-      <td>${colorVal('donchian', r.ind_5m?.donchian)}</td>
-      <td>${colorVal('rsi',      r.ind_5m?.rsi)}</td>
-      <td>${colorVal('ut_bot',   r.ind_5m?.ut_bot)}</td>
-      <td>${colorVal('donchian', r.ind_15m?.donchian)}</td>
-      <td>${colorVal('rsi',      r.ind_15m?.rsi)}</td>
-      <td>${colorVal('ut_bot',   r.ind_15m?.ut_bot)}</td>
+      <td>${colorVal('donchian',  r.ind_1m?.donchian)}</td>
+      <td>${colorVal('rsi',       r.ind_1m?.rsi)}</td>
+      <td>${colorVal('ut_bot_k1', r.ind_1m?.ut_bot_k1)}</td>
+      <td>${colorVal('ut_bot_k2', r.ind_1m?.ut_bot_k2)}</td>
+      <td>${colorVal('macd',      r.ind_1m?.macd)}</td>
+      <td>${colorVal('donchian',  r.ind_5m?.donchian)}</td>
+      <td>${colorVal('rsi',       r.ind_5m?.rsi)}</td>
+      <td>${colorVal('ut_bot_k1', r.ind_5m?.ut_bot_k1)}</td>
+      <td>${colorVal('ut_bot_k2', r.ind_5m?.ut_bot_k2)}</td>
+      <td>${colorVal('donchian',  r.ind_15m?.donchian)}</td>
+      <td>${colorVal('rsi',       r.ind_15m?.rsi)}</td>
+      <td>${colorVal('ut_bot_k1', r.ind_15m?.ut_bot_k1)}</td>
+      <td>${colorVal('ut_bot_k2', r.ind_15m?.ut_bot_k2)}</td>
     </tr>`).join('');
   } catch(e) {}
 }
