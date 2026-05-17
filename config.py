@@ -7,7 +7,7 @@ EXCHANGE = "binance"
 
 TIMEFRAMES = ["1m", "5m", "15m", "1h", "1d"]
 
-CANDLE_LIMIT = 300
+CANDLE_LIMIT = 150
 
 RSI_PERIOD        = 6
 RSI_SMOOTH_PERIOD = 10

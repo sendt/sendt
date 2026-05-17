@@ -165,6 +165,20 @@ def get_labels(df: pd.DataFrame) -> dict:
     ut_k1 = _ut_signal(close_arr, (atr_s * UT_KEY1).to_numpy())
     ut_k2 = _ut_signal(close_arr, (atr_s * UT_KEY2).to_numpy())
 
+    # Hacim oranı: şu anki hacim / 20 mum ortalaması
+    vol     = df["volume"]
+    vol_avg = vol.rolling(20).mean().iloc[-1]
+    vol_now = vol.iloc[-1]
+    vol_ratio = _r(vol_now / vol_avg if vol_avg > 0 else 1.0, 2)
+    if vol_ratio is not None:
+        vol_lbl = "YÜKSEK" if vol_ratio > 1.5 else ("DÜŞÜK" if vol_ratio < 0.8 else "NORMAL")
+    else:
+        vol_lbl = "-"
+
+    # ATR% : volatilite yüzdesi (ATR14 / fiyat * 100)
+    atr14   = _atr(df, 14).iloc[-1]
+    atr_pct = _r(atr14 / c_val * 100 if c_val > 0 else 0, 3)
+
     return {
         "donchian":     donchian,
         "donchian_pct": donchian_pct,
@@ -180,4 +194,7 @@ def get_labels(df: pd.DataFrame) -> dict:
         "macd_hist":    macd_hist,
         "macd_yon":     macd_yon,
         "trend":        trend,
+        "vol_ratio":    vol_ratio,
+        "vol_lbl":      vol_lbl,
+        "atr_pct":      atr_pct,
     }

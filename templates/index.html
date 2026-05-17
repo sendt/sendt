@@ -190,8 +190,8 @@ function sts(id, msg, t) {
 function cv(key, val) {
   if (val == null || val === '-' || val === '') return `<span class="gray">—</span>`;
   const v = String(val);
-  const g = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN','Bull','Asya'];
-  const r = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN','Bear'];
+  const g = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN','Bull','Asya','YÜKSEK'];
+  const r = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN','Bear','DÜŞÜK'];
   const y = ['BE','Y.AZALAN','K.AZALAN','YATAY'];
   if (g.some(x => v.includes(x))) return `<span class="green">${v}</span>`;
   if (r.some(x => v.includes(x))) return `<span class="red">${v}</span>`;
@@ -225,6 +225,7 @@ function renderTf(id, d) {
     ['stoch_k','Stoch K'],['stoch_d','Stoch D'],
     ['ut_bot_k1','UT K=1'],['ut_bot_k2','UT K=2'],
     ['macd_hist','MACD Hist'],['macd_yon','MACD Yön'],['trend','Trend'],
+    ['vol_lbl','Hacim'],['vol_ratio','Hacim Ort'],['atr_pct','ATR%'],
   ];
   document.getElementById(id).innerHTML = rows.map(([k,l]) =>
     `<div class="ind-row"><span class="ind-lbl">${l}</span><span class="ind-val">${cv(k,d[k])}</span></div>`

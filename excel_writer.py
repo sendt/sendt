@@ -32,10 +32,12 @@ TF_COLORS = {"1m":C_TF_1M,"5m":C_TF_5M,"15m":C_TF_15M,"1h":C_TF_1H,"1d":C_TF_1D}
 
 INFO_COLS = ["Tarih","Saat","Gün","Seans","Yön","Sonuç"]
 IND_COLS  = ["Donchian","Don%","Fiyat/Hull","RSI","RSI Önc","RSI Yön","RSI Div",
-             "Stoch K","Stoch D","UT K=1","UT K=2","MACD Hist","MACD Yön","Trend"]
+             "Stoch K","Stoch D","UT K=1","UT K=2","MACD Hist","MACD Yön","Trend",
+             "Hacim","Hacim Ort","ATR%"]
 IND_KEYS  = ["donchian","donchian_pct","fiyat_hull","rsi","rsi_prev","rsi_yon","rsi_div",
-             "stoch_k","stoch_d","ut_bot_k1","ut_bot_k2","macd_hist","macd_yon","trend"]
-IND_W     = [10,7,14,6,7,8,7, 8,8,8,8,11,11,8]
+             "stoch_k","stoch_d","ut_bot_k1","ut_bot_k2","macd_hist","macd_yon","trend",
+             "vol_lbl","vol_ratio","atr_pct"]
+IND_W     = [10,7,14,6,7,8,7, 8,8,8,8,11,11,8, 9,9,7]
 
 BTC_COLS  = ["BTC Yön"]
 BTC_KEYS  = ["btc_yon"]
@@ -154,11 +156,11 @@ def _legend(wb):
 
 
 def _val_color(col, val):
-    if val in ("YEŞİL","BUY","WIN","LONG","YUKARI","Y.ARTAN","Bull","Asya"):
+    if val in ("YEŞİL","BUY","WIN","LONG","YUKARI","Y.ARTAN","Bull","Asya","YÜKSEK"):
         return C_GREEN
-    if val in ("KIRMIZI","SELL","LOSS","SHORT","AŞAĞI","K.ARTAN","Bear"):
+    if val in ("KIRMIZI","SELL","LOSS","SHORT","AŞAĞI","K.ARTAN","Bear","DÜŞÜK"):
         return C_RED
-    if val in ("BE","MID","Y.AZALAN","K.AZALAN","YATAY","-"):
+    if val in ("BE","MID","Y.AZALAN","K.AZALAN","YATAY","-","NORMAL"):
         return C_YELLOW
     if col in ("RSI","RSI Önc","Stoch K","Stoch D") and val not in (None,"-"):
         try:

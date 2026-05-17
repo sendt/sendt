@@ -154,7 +154,7 @@ def history():
         ws = wb["TRADE LOG"]
         rows = []
         n_info = 6
-        n_ind  = 14
+        n_ind  = 17
         for row in ws.iter_rows(min_row=5, values_only=True):
             if row[0] is None:
                 continue
@@ -170,7 +170,7 @@ def history():
                 "ind_15m":   _slice(row, n_info + 2*n_ind, n_ind),
                 "ind_1h":    _slice(row, n_info + 3*n_ind, n_ind),
                 "ind_1d":    _slice(row, n_info + 4*n_ind, n_ind),
-                "btc_yon":   row[n_info + 5*n_ind] or "-",
+                "btc_yon":   (row[n_info + 5*n_ind] or "-") if len(row) > n_info + 5*n_ind else "-",
             })
         return jsonify(list(reversed(rows[-50:])))
     except Exception as e:
@@ -179,7 +179,8 @@ def history():
 
 def _slice(row, start, n):
     keys = ["donchian","donchian_pct","fiyat_hull","rsi","rsi_prev","rsi_yon","rsi_div",
-            "stoch_k","stoch_d","ut_bot_k1","ut_bot_k2","macd_hist","macd_yon","trend"]
+            "stoch_k","stoch_d","ut_bot_k1","ut_bot_k2","macd_hist","macd_yon","trend",
+            "vol_lbl","vol_ratio","atr_pct"]
     return {k: (row[start+i] if start+i < len(row) else "-") or "-"
             for i, k in enumerate(keys[:n])}
 
