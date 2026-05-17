@@ -5,381 +5,391 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WLD/USDT — Trade Logger</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #0d1117;
-    color: #c9d1d9;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  h1 {
-    text-align: center;
-    font-size: 1.1rem;
-    color: #58a6ff;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .subtitle {
-    text-align: center;
-    font-size: 0.75rem;
-    color: #6e7681;
-    margin-bottom: 20px;
-  }
-  .price-bar {
-    text-align: center;
-    font-size: 2rem;
-    font-weight: bold;
-    color: #f0f6fc;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-  .price-bar span { color: #8b949e; font-size: 1rem; }
-  .time-bar {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #6e7681;
-    margin-bottom: 24px;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 16px;
+}
+h1 { text-align:center; font-size:1rem; color:#58a6ff; letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
+.subtitle { text-align:center; font-size:0.72rem; color:#6e7681; margin-bottom:18px; }
 
-  .buttons {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    margin-bottom: 28px;
-  }
-  .btn {
-    flex: 1;
-    max-width: 220px;
-    padding: 18px 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: opacity .15s, transform .1s;
-  }
-  .btn:active { transform: scale(.97); opacity: .85; }
-  .btn-open  { background: #238636; color: #fff; }
-  .btn-close { background: #b91c1c; color: #fff; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; }
+/* ── Panels ── */
+.panels { display:flex; gap:14px; max-width:1000px; margin:0 auto 20px; }
+.panel {
+  flex:1; background:#161b22; border:1px solid #21262d;
+  border-radius:12px; padding:16px;
+}
+.panel-title {
+  font-size:0.72rem; text-transform:uppercase; letter-spacing:1px;
+  color:#8b949e; margin-bottom:12px; padding-bottom:8px;
+  border-bottom:1px solid #21262d;
+}
 
-  .note-row {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 28px;
-  }
-  .note-input {
-    flex: 1;
-    max-width: 460px;
-    padding: 10px 14px;
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    color: #c9d1d9;
-    font-size: 0.9rem;
-  }
-  .note-input:focus { outline: none; border-color: #58a6ff; }
+/* ── Form fields ── */
+.field-row { display:flex; gap:10px; margin-bottom:10px; align-items:flex-end; }
+.field { display:flex; flex-direction:column; flex:1; }
+.field label { font-size:0.72rem; color:#8b949e; margin-bottom:4px; }
+.field input {
+  background:#0d1117; border:1px solid #30363d; border-radius:7px;
+  color:#f0f6fc; padding:8px 10px; font-size:0.9rem; width:100%;
+}
+.field input:focus { outline:none; border-color:#58a6ff; }
 
-  .status-bar {
-    text-align: center;
-    min-height: 22px;
-    font-size: 0.85rem;
-    margin-bottom: 24px;
-    transition: color .3s;
-  }
-  .status-ok    { color: #3fb950; }
-  .status-error { color: #f85149; }
-  .status-loading { color: #d29922; }
+/* Direction toggle */
+.dir-toggle { display:flex; gap:0; border-radius:7px; overflow:hidden; border:1px solid #30363d; }
+.dir-btn {
+  flex:1; padding:8px 0; font-size:0.85rem; font-weight:700;
+  border:none; cursor:pointer; letter-spacing:1px; transition:background .15s;
+  background:#0d1117; color:#6e7681;
+}
+.dir-btn.active-long  { background:#166534; color:#4ade80; }
+.dir-btn.active-short { background:#7f1d1d; color:#f87171; }
 
-  .trade-id-row {
-    text-align: center;
-    font-size: 0.78rem;
-    color: #6e7681;
-    margin-bottom: 26px;
-  }
-  .trade-id-row code {
-    background: #161b22;
-    padding: 2px 8px;
-    border-radius: 4px;
-    color: #58a6ff;
-  }
+/* Action buttons */
+.action-row { display:flex; gap:10px; margin-top:14px; }
+.btn {
+  flex:1; padding:14px 0; font-size:1rem; font-weight:700;
+  border:none; border-radius:9px; cursor:pointer;
+  letter-spacing:1px; transition:opacity .15s, transform .1s;
+}
+.btn:active { transform:scale(.97); opacity:.85; }
+.btn:disabled { opacity:.35; cursor:not-allowed; }
+.btn-open  { background:#16a34a; color:#fff; }
+.btn-close { background:#dc2626; color:#fff; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    max-width: 860px;
-    margin: 0 auto;
-  }
-  .card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    padding: 14px 16px;
-  }
-  .card-title {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #58a6ff;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #21262d;
-    padding-bottom: 6px;
-  }
-  .ind-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    font-size: 0.83rem;
-    border-bottom: 1px solid #21262d22;
-  }
-  .ind-label { color: #8b949e; }
-  .ind-val   { font-weight: 600; font-family: monospace; }
-  .up    { color: #3fb950; }
-  .down  { color: #f85149; }
-  .bull  { color: #3fb950; }
-  .bear  { color: #f85149; }
-  .buy   { color: #3fb950; font-weight: 700; }
-  .sell  { color: #f85149; font-weight: 700; }
-  .neut  { color: #8b949e; }
-  .ob    { color: #f85149; }   /* overbought */
-  .os    { color: #3fb950; }   /* oversold */
-  .norm  { color: #e6edf3; }
+/* Result selector */
+.result-row { display:flex; gap:8px; margin-bottom:10px; }
+.res-btn {
+  flex:1; padding:8px 0; font-size:0.85rem; font-weight:700;
+  border:1px solid #30363d; border-radius:7px; cursor:pointer;
+  background:#0d1117; color:#6e7681; transition:all .15s;
+}
+.res-btn.active-win  { background:#15803d22; border-color:#16a34a; color:#4ade80; }
+.res-btn.active-loss { background:#7f1d1d22; border-color:#dc2626; color:#f87171; }
+.res-btn.active-be   { background:#78350f22; border-color:#d97706; color:#fbbf24; }
 
-  .empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 40px;
-    color: #6e7681;
-    font-size: 0.9rem;
-  }
+/* Status */
+.status-bar {
+  text-align:center; min-height:20px; font-size:0.82rem; margin:10px 0;
+}
+.s-ok   { color:#3fb950; }
+.s-err  { color:#f85149; }
+.s-load { color:#d29922; }
 
-  .history-title {
-    max-width: 860px;
-    margin: 28px auto 10px;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #6e7681;
-    padding-left: 4px;
-  }
-  .history-table {
-    max-width: 860px;
-    margin: 0 auto;
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    overflow: hidden;
-    font-size: 0.78rem;
-  }
-  .history-table table { width: 100%; border-collapse: collapse; }
-  .history-table th {
-    background: #1c2128;
-    padding: 8px 12px;
-    text-align: left;
-    color: #8b949e;
-    font-weight: 500;
-  }
-  .history-table td { padding: 7px 12px; border-top: 1px solid #21262d; }
-  .history-table tr:hover td { background: #1c2128; }
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 700;
-    font-size: 0.72rem;
-  }
-  .badge-open  { background: #23863622; color: #3fb950; border: 1px solid #238636; }
-  .badge-close { background: #b91c1c22; color: #f85149; border: 1px solid #b91c1c; }
+/* Trade ID badge */
+.trade-badge {
+  background:#1c2128; border:1px solid #30363d; border-radius:7px;
+  padding:8px 12px; font-size:0.78rem; color:#8b949e; margin-bottom:12px;
+  display:none;
+}
+.trade-badge code { color:#58a6ff; }
 
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr; }
-    .buttons { flex-direction: column; align-items: center; }
-  }
+/* ── Indicator grid ── */
+.ind-section { max-width:1000px; margin:0 auto 20px; }
+.ind-section-title {
+  font-size:0.72rem; text-transform:uppercase; letter-spacing:1px;
+  color:#6e7681; margin-bottom:8px;
+}
+.tf-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.tf-card {
+  background:#161b22; border:1px solid #21262d; border-radius:10px;
+  overflow:hidden;
+}
+.tf-head {
+  padding:8px 12px; font-size:0.72rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:1px; color:#fff;
+}
+.tf-1m  .tf-head { background:#1e3a5f; }
+.tf-5m  .tf-head { background:#1e4d3a; }
+.tf-15m .tf-head { background:#4a2020; }
+.tf-1h  .tf-head { background:#3b2a50; }
+.tf-body { padding:8px 12px; }
+.ind-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:4px 0; font-size:0.8rem; border-bottom:1px solid #21262d22;
+}
+.ind-lbl { color:#6e7681; }
+.ind-val { font-weight:600; font-family:monospace; font-size:0.82rem; }
+.green  { color:#22c55e; }
+.red    { color:#ef4444; }
+.yellow { color:#eab308; }
+.gray   { color:#8b949e; }
+
+/* ── History ── */
+.history-wrap { max-width:1000px; margin:0 auto; }
+.history-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:#6e7681; margin-bottom:8px; }
+.hist-table-wrap { background:#161b22; border:1px solid #21262d; border-radius:10px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.76rem; }
+th { background:#1c2128; padding:8px 10px; text-align:center; color:#8b949e; font-weight:500; white-space:nowrap; }
+td { padding:6px 10px; border-top:1px solid #21262d; text-align:center; white-space:nowrap; }
+tr:hover td { background:#1c2128; }
+.badge { display:inline-block; padding:2px 7px; border-radius:4px; font-weight:700; font-size:0.7rem; }
+.b-long  { background:#16653422; color:#4ade80; border:1px solid #16a34a; }
+.b-short { background:#7f1d1d22; color:#f87171; border:1px solid #dc2626; }
+.b-win   { background:#16653422; color:#4ade80; }
+.b-loss  { background:#7f1d1d22; color:#f87171; }
+.b-be    { background:#78350f22; color:#fbbf24; }
+
+.empty-hint { text-align:center; padding:30px; color:#6e7681; font-size:0.85rem; }
+
+@media(max-width:700px){
+  .panels { flex-direction:column; }
+  .tf-grid { grid-template-columns:repeat(2,1fr); }
+}
 </style>
 </head>
 <body>
 
 <h1>WLD / USDT — Trade Logger</h1>
-<div class="subtitle">1m · 5m · 15m indikatörleri otomatik kaydeder</div>
+<div class="subtitle">İşlem aç → butona bas → indikatörler kaydedilir · Excel'e yazar</div>
 
-<div class="price-bar" id="priceBar">— <span>USDT</span></div>
-<div class="time-bar" id="timeBar">—</div>
+<div class="panels">
 
-<div class="note-row">
-  <input class="note-input" id="noteInput" type="text" placeholder="Not ekle (opsiyonel): örn. 'destek bölgesi long'">
+  <!-- Sol: İşlem Aç -->
+  <div class="panel">
+    <div class="panel-title">▶ İşlem Aç</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Yön</label>
+        <div class="dir-toggle">
+          <button class="dir-btn active-long" id="btnLong" onclick="setDir('LONG')">LONG</button>
+          <button class="dir-btn" id="btnShort" onclick="setDir('SHORT')">SHORT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Stop Loss</label>
+        <input id="inpStop" type="number" step="0.0001" placeholder="0.0000">
+      </div>
+      <div class="field">
+        <label>Take Profit</label>
+        <input id="inpTP" type="number" step="0.0001" placeholder="0.0000">
+      </div>
+    </div>
+
+    <button class="btn btn-open" id="btnOpen" onclick="openTrade()">▶ İŞLEM AÇ &amp; KAYDET</button>
+    <div class="status-bar" id="statusOpen"></div>
+    <div class="trade-badge" id="tradeBadge">
+      Açık işlem ID: <code id="openTradeId">—</code> — kapatırken otomatik kullanılır
+    </div>
+  </div>
+
+  <!-- Sağ: İşlem Kapat -->
+  <div class="panel">
+    <div class="panel-title">◀ İşlem Kapat</div>
+
+    <div class="field" style="margin-bottom:10px;">
+      <label>Sonuç</label>
+      <div class="result-row">
+        <button class="res-btn" id="resWin"  onclick="setResult('WIN')">WIN</button>
+        <button class="res-btn" id="resLoss" onclick="setResult('LOSS')">LOSS</button>
+        <button class="res-btn" id="resBe"   onclick="setResult('BE')">BE</button>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label>Trade ID (otomatik dolar, değiştirebilirsin)</label>
+      <input id="inpCloseId" type="text" placeholder="T260517123456">
+    </div>
+
+    <button class="btn btn-close" id="btnClose" onclick="closeTrade()">◀ İŞLEM KAPAT &amp; KAYDET</button>
+    <div class="status-bar" id="statusClose"></div>
+  </div>
+
 </div>
 
-<div class="buttons">
-  <button class="btn btn-open"  id="btnOpen"  onclick="doAction('open')">▶ İŞLEM AÇ</button>
-  <button class="btn btn-close" id="btnClose" onclick="doAction('close')">◀ İŞLEM KAPAT</button>
+<!-- İndikatörler -->
+<div class="ind-section">
+  <div class="ind-section-title">Son Yakalanan İndikatörler</div>
+  <div class="tf-grid" id="tfGrid">
+    <div class="tf-card tf-1m">  <div class="tf-head">1m</div>  <div class="tf-body" id="tf1m"><div class="empty-hint">—</div></div></div>
+    <div class="tf-card tf-5m">  <div class="tf-head">5m</div>  <div class="tf-body" id="tf5m"><div class="empty-hint">—</div></div></div>
+    <div class="tf-card tf-15m"> <div class="tf-head">15m</div> <div class="tf-body" id="tf15m"><div class="empty-hint">—</div></div></div>
+    <div class="tf-card tf-1h">  <div class="tf-head">1h</div>  <div class="tf-body" id="tf1h"><div class="empty-hint">—</div></div></div>
+  </div>
 </div>
 
-<div class="status-bar" id="statusBar"></div>
-<div class="trade-id-row" id="tradeIdRow"></div>
-
-<div class="grid" id="indGrid">
-  <div class="empty-state">Henüz veri yok — işlem açmak için butona bas.</div>
-</div>
-
-<div class="history-title">Son İşlemler</div>
-<div class="history-table">
-  <table>
-    <thead><tr>
-      <th>Trade ID</th><th>İşlem</th><th>Zaman (UTC)</th><th>Fiyat</th>
-      <th>1m RSI</th><th>5m RSI</th><th>15m RSI</th>
-      <th>1m UT Bot</th><th>5m UT Bot</th>
-      <th>Not</th>
-    </tr></thead>
-    <tbody id="histBody"></tbody>
-  </table>
+<!-- Geçmiş -->
+<div class="history-wrap">
+  <div class="history-title">İşlem Geçmişi (Excel'den)</div>
+  <div class="hist-table-wrap">
+    <table>
+      <thead><tr>
+        <th>Tarih</th><th>Saat</th><th>Yön</th><th>Giriş</th>
+        <th>Stop</th><th>TP</th><th>Sonuç</th><th>R:R</th>
+        <th>1m Don.</th><th>1m RSI</th><th>1m UT</th><th>1m MACD</th>
+        <th>5m Don.</th><th>5m RSI</th><th>5m UT</th>
+        <th>15m Don.</th><th>15m RSI</th><th>15m UT</th>
+      </tr></thead>
+      <tbody id="histBody"><tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-let currentTradeId = null;
-let lastData = null;
+let currentDir = 'LONG';
+let currentResult = '';
+let currentTradeId = '';
 
-function setStatus(msg, type) {
-  const el = document.getElementById('statusBar');
+function setDir(d) {
+  currentDir = d;
+  document.getElementById('btnLong').className  = 'dir-btn' + (d==='LONG'  ? ' active-long'  : '');
+  document.getElementById('btnShort').className = 'dir-btn' + (d==='SHORT' ? ' active-short' : '');
+}
+
+function setResult(r) {
+  currentResult = r;
+  document.getElementById('resWin').className  = 'res-btn' + (r==='WIN'  ? ' active-win'  : '');
+  document.getElementById('resLoss').className = 'res-btn' + (r==='LOSS' ? ' active-loss' : '');
+  document.getElementById('resBe').className   = 'res-btn' + (r==='BE'   ? ' active-be'   : '');
+}
+
+function status(elId, msg, type) {
+  const el = document.getElementById(elId);
   el.textContent = msg;
-  el.className = 'status-bar status-' + type;
+  el.className = 'status-bar s-' + type;
 }
 
-function colorRsi(v) {
-  if (v === null || v === undefined) return '<span class="neut">—</span>';
-  const cls = v > 70 ? 'ob' : v < 30 ? 'os' : 'norm';
-  return `<span class="${cls}">${v}</span>`;
-}
-function colorDir(v) {
-  if (!v) return '—';
-  return v === 'UP' ? `<span class="up">▲ UP</span>` : `<span class="down">▼ DOWN</span>`;
-}
-function colorTrend(v) {
-  if (!v) return '—';
-  return v === 'BULL' ? `<span class="bull">● BULL</span>` : `<span class="bear">● BEAR</span>`;
-}
-function colorUT(v) {
-  if (!v) return '—';
-  const cls = v === 'BUY' ? 'buy' : v === 'SELL' ? 'sell' : 'neut';
-  return `<span class="${cls}">${v}</span>`;
-}
-function colorMacdHist(v) {
-  if (v === null || v === undefined) return '—';
-  const cls = v > 0 ? 'up' : 'down';
-  return `<span class="${cls}">${v}</span>`;
+function colorVal(key, val) {
+  if (!val || val === '-') return `<span class="gray">—</span>`;
+  const v = String(val);
+  const green = ['YEŞİL','BUY','WIN','LONG','YUKARI','Y.ARTAN'];
+  const red   = ['KIRMIZI','SELL','LOSS','SHORT','AŞAĞI','K.ARTAN'];
+  const yel   = ['BE','MID','-','Y.AZALAN','K.AZALAN','YATAY'];
+  if (green.some(x => v.includes(x))) return `<span class="green">${v}</span>`;
+  if (red.some(x => v.includes(x)))   return `<span class="red">${v}</span>`;
+  if (yel.some(x => v === x))         return `<span class="yellow">${v}</span>`;
+  if (key === 'rsi') {
+    const n = parseFloat(v);
+    if (n > 70) return `<span class="red">${v}</span>`;
+    if (n < 30) return `<span class="green">${v}</span>`;
+  }
+  if (v === 'OVERBOUGHT') return `<span class="red">${v}</span>`;
+  if (v === 'OVERSOLD')   return `<span class="green">${v}</span>`;
+  return `<span style="color:#e6edf3">${v}</span>`;
 }
 
-function renderGrid(data) {
-  const tfs = ['1m', '5m', '15m'];
-  const grid = document.getElementById('indGrid');
-  grid.innerHTML = '';
-
-  tfs.forEach(tf => {
-    const d = data[tf];
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-title">${tf}</div>
-      <div class="ind-row"><span class="ind-label">RSI</span><span class="ind-val">${colorRsi(d.rsi)}</span></div>
-      <div class="ind-row"><span class="ind-label">MACD</span><span class="ind-val">${d.macd}</span></div>
-      <div class="ind-row"><span class="ind-label">MACD Signal</span><span class="ind-val">${d.macd_signal}</span></div>
-      <div class="ind-row"><span class="ind-label">MACD Hist</span><span class="ind-val">${colorMacdHist(d.macd_hist)}</span></div>
-      <div class="ind-row"><span class="ind-label">StochRSI K</span><span class="ind-val">${colorRsi(d.stochrsi_k)}</span></div>
-      <div class="ind-row"><span class="ind-label">StochRSI D</span><span class="ind-val">${d.stochrsi_d}</span></div>
-      <div class="ind-row"><span class="ind-label">Hull Suite</span><span class="ind-val">${d.hull_hma}</span></div>
-      <div class="ind-row"><span class="ind-label">Hull Yön</span><span class="ind-val">${colorDir(d.hull_dir)}</span></div>
-      <div class="ind-row"><span class="ind-label">Donchian Üst</span><span class="ind-val">${d.donchian_upper}</span></div>
-      <div class="ind-row"><span class="ind-label">Donchian Orta</span><span class="ind-val">${d.donchian_mid}</span></div>
-      <div class="ind-row"><span class="ind-label">Donchian Alt</span><span class="ind-val">${d.donchian_lower}</span></div>
-      <div class="ind-row"><span class="ind-label">Donchian Trend</span><span class="ind-val">${colorTrend(d.donchian_trend)}</span></div>
-      <div class="ind-row"><span class="ind-label">UT Trail Stop</span><span class="ind-val">${d.ut_trail_stop}</span></div>
-      <div class="ind-row"><span class="ind-label">UT Sinyal</span><span class="ind-val">${colorUT(d.ut_signal)}</span></div>
-      <div class="ind-row"><span class="ind-label">Fiyat Trail Üstünde</span><span class="ind-val">${d.ut_above_trail ? '<span class="up">Evet</span>' : '<span class="down">Hayır</span>'}</span></div>
-    `;
-    grid.appendChild(card);
-  });
+function renderTf(tfId, data) {
+  const labels = {
+    donchian:'Donchian', fiyat_hull:'Fiyat/Hull', rsi:'RSI',
+    ut_bot:'UT Bot', macd:'MACD', stochrsi:'StochRSI', trend:'Trend'
+  };
+  let html = '';
+  for (const [k, lbl] of Object.entries(labels)) {
+    html += `<div class="ind-row">
+      <span class="ind-lbl">${lbl}</span>
+      <span class="ind-val">${colorVal(k, data[k])}</span>
+    </div>`;
+  }
+  document.getElementById(tfId).innerHTML = html;
 }
 
-function addHistRow(row) {
-  const tbody = document.getElementById('histBody');
-  const tr = document.createElement('tr');
-  const badgeCls = row.action === 'OPEN' ? 'badge-open' : 'badge-close';
-  const badgeTxt = row.action === 'OPEN' ? 'AÇ' : 'KAPAT';
-  tr.innerHTML = `
-    <td><code style="color:#58a6ff;font-size:0.75rem">${row.trade_id}</code></td>
-    <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
-    <td>${row.datetime_utc}</td>
-    <td>${row.price ? Number(row.price).toFixed(4) : '—'}</td>
-    <td>${colorRsi(row['1m_rsi'])}</td>
-    <td>${colorRsi(row['5m_rsi'])}</td>
-    <td>${colorRsi(row['15m_rsi'])}</td>
-    <td>${colorUT(row['1m_ut_signal'])}</td>
-    <td>${colorUT(row['5m_ut_signal'])}</td>
-    <td style="color:#8b949e">${row.notes || ''}</td>
-  `;
-  tbody.insertBefore(tr, tbody.firstChild);
+function renderIndicators(indicators) {
+  if (indicators['1m'])  renderTf('tf1m',  indicators['1m']);
+  if (indicators['5m'])  renderTf('tf5m',  indicators['5m']);
+  if (indicators['15m']) renderTf('tf15m', indicators['15m']);
+  if (indicators['1h'])  renderTf('tf1h',  indicators['1h']);
 }
 
-async function doAction(action) {
-  const note = document.getElementById('noteInput').value.trim();
-  const tradeId = action === 'open'
-    ? 'T' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14)
-    : currentTradeId;
-
+async function openTrade() {
+  const stop = document.getElementById('inpStop').value;
+  const tp   = document.getElementById('inpTP').value;
   document.getElementById('btnOpen').disabled = true;
-  document.getElementById('btnClose').disabled = true;
-  setStatus('Binance\'ten veri çekiliyor...', 'loading');
+  status('statusOpen', 'Binance\'ten veri çekiliyor...', 'load');
 
   try {
-    const res = await fetch('/capture', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({action, trade_id: tradeId, note})
+    const res = await fetch('/open_trade', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ direction: currentDir, stop, tp })
     });
     const data = await res.json();
+    if (data.error) { status('statusOpen', 'Hata: ' + data.error, 'err'); return; }
 
-    if (data.error) {
-      setStatus('Hata: ' + data.error, 'error');
-      return;
-    }
+    currentTradeId = data.trade_id;
+    document.getElementById('openTradeId').textContent = data.trade_id;
+    document.getElementById('tradeBadge').style.display = 'block';
+    document.getElementById('inpCloseId').value = data.trade_id;
 
-    lastData = data.indicators;
-    if (action === 'open') currentTradeId = data.trade_id;
-
-    document.getElementById('priceBar').innerHTML = `${Number(data.price).toFixed(4)} <span>USDT</span>`;
-    document.getElementById('timeBar').textContent = data.datetime_utc + ' UTC';
-    document.getElementById('tradeIdRow').innerHTML = action === 'open'
-      ? `İşlem ID: <code>${data.trade_id}</code> — kapatırken otomatik kullanılır`
-      : `İşlem <code>${data.trade_id}</code> kapatıldı ve kaydedildi`;
-
-    renderGrid(data.indicators);
-    addHistRow({...data, action: action.toUpperCase()});
-
-    const msg = action === 'open' ? '✓ Açılış verileri kaydedildi' : '✓ Kapanış verileri kaydedildi';
-    setStatus(msg, 'ok');
-    document.getElementById('noteInput').value = '';
-
-  } catch (e) {
-    setStatus('Bağlantı hatası: ' + e.message, 'error');
+    renderIndicators(data.indicators);
+    status('statusOpen', `✓ Kaydedildi — Giriş: ${data.price} USDT  ${data.datetime_utc} UTC`, 'ok');
+  } catch(e) {
+    status('statusOpen', 'Bağlantı hatası: ' + e.message, 'err');
   } finally {
     document.getElementById('btnOpen').disabled = false;
+  }
+}
+
+async function closeTrade() {
+  const tradeId = document.getElementById('inpCloseId').value.trim() || currentTradeId;
+  if (!tradeId) { status('statusClose', 'Önce işlem aç veya Trade ID gir', 'err'); return; }
+  if (!currentResult) { status('statusClose', 'Sonucu seç: WIN / LOSS / BE', 'err'); return; }
+
+  document.getElementById('btnClose').disabled = true;
+  status('statusClose', 'Binance\'ten veri çekiliyor...', 'load');
+
+  try {
+    const res = await fetch('/close_trade', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ trade_id: tradeId, result: currentResult })
+    });
+    const data = await res.json();
+    if (data.error) { status('statusClose', 'Hata: ' + data.error, 'err'); return; }
+
+    renderIndicators(data.indicators);
+    status('statusClose', `✓ Excel'e kaydedildi — Kapanış: ${data.price} USDT  R:R ${data.rr}`, 'ok');
+    document.getElementById('tradeBadge').style.display = 'none';
+    currentTradeId = '';
+    document.getElementById('inpCloseId').value = '';
+    setResult('');
+    loadHistory();
+  } catch(e) {
+    status('statusClose', 'Bağlantı hatası: ' + e.message, 'err');
+  } finally {
     document.getElementById('btnClose').disabled = false;
   }
 }
 
-// Sayfa yüklenince geçmiş işlemleri çek
+function dirBadge(d) {
+  return d === 'LONG'
+    ? `<span class="badge b-long">LONG</span>`
+    : `<span class="badge b-short">SHORT</span>`;
+}
+function resBadge(r) {
+  const map = {WIN:'b-win', LOSS:'b-loss', BE:'b-be'};
+  return r ? `<span class="badge ${map[r]||''}">${r}</span>` : '—';
+}
+
 async function loadHistory() {
   try {
     const res = await fetch('/history');
     const rows = await res.json();
-    rows.forEach(r => addHistRow(r));
+    const tbody = document.getElementById('histBody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="18" class="empty-hint">Henüz kayıt yok</td></tr>'; return; }
+    tbody.innerHTML = rows.map(r => `<tr>
+      <td>${r.date}</td><td>${r.time}</td>
+      <td>${dirBadge(r.direction)}</td>
+      <td>${r.entry}</td><td>${r.stop||'—'}</td><td>${r.tp||'—'}</td>
+      <td>${resBadge(r.result)}</td><td>${r.rr||'—'}</td>
+      <td>${colorVal('donchian', r.ind_1m?.donchian)}</td>
+      <td>${colorVal('rsi',      r.ind_1m?.rsi)}</td>
+      <td>${colorVal('ut_bot',   r.ind_1m?.ut_bot)}</td>
+      <td>${colorVal('macd',     r.ind_1m?.macd)}</td>
+      <td>${colorVal('donchian', r.ind_5m?.donchian)}</td>
+      <td>${colorVal('rsi',      r.ind_5m?.rsi)}</td>
+      <td>${colorVal('ut_bot',   r.ind_5m?.ut_bot)}</td>
+      <td>${colorVal('donchian', r.ind_15m?.donchian)}</td>
+      <td>${colorVal('rsi',      r.ind_15m?.rsi)}</td>
+      <td>${colorVal('ut_bot',   r.ind_15m?.ut_bot)}</td>
+    </tr>`).join('');
   } catch(e) {}
 }
+
 loadHistory();
 </script>
 </body>

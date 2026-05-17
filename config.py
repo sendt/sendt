@@ -1,12 +1,10 @@
 SYMBOL = "WLD/USDT"
 EXCHANGE = "binance"
 
-TIMEFRAMES = ["1m", "5m", "15m"]
+TIMEFRAMES = ["1m", "5m", "15m", "1h"]
 
-# Kaç mum verisi çekilsin (indikatörler için yeterli geçmiş)
 CANDLE_LIMIT = 300
 
-# İndikatör parametreleri
 RSI_PERIOD = 14
 
 MACD_FAST = 12
@@ -18,11 +16,11 @@ STOCHRSI_STOCH_PERIOD = 14
 STOCHRSI_K = 3
 STOCHRSI_D = 3
 
-HMA_PERIOD = 55          # Hull Suite
+HMA_PERIOD = 55
 
-DONCHIAN_PERIOD = 20     # Donchian Trend Ribbon
+DONCHIAN_PERIOD = 20
 
-UT_ATR_PERIOD = 1        # UT Bot Alert
-UT_ATR_MULT = 2.0        # UT Bot Alert key multiplier
+UT_ATR_PERIOD = 1
+UT_ATR_MULT = 2.0
 
-CSV_FILE = "trades.csv"
+EXCEL_FILE = "WLD_Trade_Journal.xlsx"

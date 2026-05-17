@@ -10,7 +10,7 @@ from config import (
 )
 
 
-def _r(val, decimals=4):
+def _r(val, decimals=2):
     if val is None or (isinstance(val, float) and np.isnan(val)):
         return None
     return round(float(val), decimals)
@@ -28,145 +28,134 @@ def _rsi_series(close: pd.Series, period: int) -> pd.Series:
     return 100 - 100 / (1 + rs)
 
 
-def calc_rsi(df: pd.DataFrame) -> dict:
-    rsi = _rsi_series(df["close"], RSI_PERIOD)
-    return {"rsi": _r(rsi.iloc[-1], 2)}
-
-
 # ── MACD ─────────────────────────────────────────────────────────────────────
 
-def calc_macd(df: pd.DataFrame) -> dict:
-    close = df["close"]
+def _macd_series(close: pd.Series):
     ema_fast = close.ewm(span=MACD_FAST, adjust=False).mean()
     ema_slow = close.ewm(span=MACD_SLOW, adjust=False).mean()
-    macd_line = ema_fast - ema_slow
-    signal_line = macd_line.ewm(span=MACD_SIGNAL, adjust=False).mean()
-    hist = macd_line - signal_line
-    return {
-        "macd": _r(macd_line.iloc[-1]),
-        "macd_signal": _r(signal_line.iloc[-1]),
-        "macd_hist": _r(hist.iloc[-1]),
-    }
+    line = ema_fast - ema_slow
+    signal = line.ewm(span=MACD_SIGNAL, adjust=False).mean()
+    hist = line - signal
+    return line, signal, hist
 
 
-# ── Stoch RSI ─────────────────────────────────────────────────────────────────
+# ── WMA / HMA ────────────────────────────────────────────────────────────────
 
-def calc_stochrsi(df: pd.DataFrame) -> dict:
-    rsi = _rsi_series(df["close"], STOCHRSI_RSI_PERIOD)
-    rsi_min = rsi.rolling(STOCHRSI_STOCH_PERIOD).min()
-    rsi_max = rsi.rolling(STOCHRSI_STOCH_PERIOD).max()
-    stoch = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
-    k = stoch.rolling(STOCHRSI_K).mean()
-    d = k.rolling(STOCHRSI_D).mean()
-    return {
-        "stochrsi_k": _r(k.iloc[-1], 2),
-        "stochrsi_d": _r(d.iloc[-1], 2),
-    }
+def _wma(s: pd.Series, n: int) -> pd.Series:
+    w = np.arange(1, n + 1)
+    return s.rolling(n).apply(lambda x: np.dot(x, w) / w.sum(), raw=True)
 
 
-# ── Hull Suite ────────────────────────────────────────────────────────────────
-
-def _wma(series: pd.Series, period: int) -> pd.Series:
-    weights = np.arange(1, period + 1)
-    return series.rolling(period).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
+def _hma(s: pd.Series, n: int) -> pd.Series:
+    return _wma(2 * _wma(s, max(1, n // 2)) - _wma(s, n), max(1, int(np.sqrt(n))))
 
 
-def _hma(series: pd.Series, period: int) -> pd.Series:
-    half = max(1, period // 2)
-    sqrt_p = max(1, int(np.sqrt(period)))
-    return _wma(2 * _wma(series, half) - _wma(series, period), sqrt_p)
-
-
-def calc_hull_suite(df: pd.DataFrame) -> dict:
-    hma = _hma(df["close"], HMA_PERIOD)
-    val = hma.iloc[-1]
-    prev = hma.iloc[-2]
-    direction = "UP" if val > prev else "DOWN"
-    return {
-        "hull_hma": _r(val),
-        "hull_dir": direction,
-    }
-
-
-# ── Donchian Trend Ribbon ─────────────────────────────────────────────────────
-
-def calc_donchian(df: pd.DataFrame) -> dict:
-    upper = df["high"].rolling(DONCHIAN_PERIOD).max()
-    lower = df["low"].rolling(DONCHIAN_PERIOD).min()
-    mid = (upper + lower) / 2
-    close = df["close"].iloc[-1]
-    trend = "BULL" if close > mid.iloc[-1] else "BEAR"
-    return {
-        "donchian_upper": _r(upper.iloc[-1]),
-        "donchian_mid": _r(mid.iloc[-1]),
-        "donchian_lower": _r(lower.iloc[-1]),
-        "donchian_trend": trend,
-    }
-
-
-# ── UT Bot Alert ──────────────────────────────────────────────────────────────
+# ── ATR ──────────────────────────────────────────────────────────────────────
 
 def _atr(df: pd.DataFrame, period: int) -> pd.Series:
-    high = df["high"]
-    low = df["low"]
-    close = df["close"]
-    prev_close = close.shift(1)
-    tr = pd.concat([
-        high - low,
-        (high - prev_close).abs(),
-        (low - prev_close).abs(),
-    ], axis=1).max(axis=1)
+    h, l, c = df["high"], df["low"], df["close"]
+    tr = pd.concat([(h - l), (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
     return tr.ewm(com=period - 1, min_periods=period).mean()
 
 
-def calc_ut_bot(df: pd.DataFrame) -> dict:
+# ── Label helpers ─────────────────────────────────────────────────────────────
+
+def _stochrsi_label(k) -> str:
+    if k is None:
+        return "-"
+    if k > 80:
+        return "OVERBOUGHT"
+    if k < 20:
+        return "OVERSOLD"
+    return "MID"
+
+
+def _macd_label(hist_now, hist_prev) -> str:
+    if hist_now is None or hist_prev is None:
+        return "-"
+    if hist_now >= 0:
+        return "Y.ARTAN" if hist_now > hist_prev else "Y.AZALAN"
+    else:
+        return "K.ARTAN" if abs(hist_now) > abs(hist_prev) else "K.AZALAN"
+
+
+def _hull_fiyat_label(hull_dir: str, close: float, hma_val: float) -> str:
+    prefix = "Y" if hull_dir == "UP" else "K"
+    suffix = "ÜSTÜNDE" if close >= hma_val else "ALTINDA"
+    return f"{prefix}.{suffix}"
+
+
+# ── Ana fonksiyon ─────────────────────────────────────────────────────────────
+
+def get_labels(df: pd.DataFrame) -> dict:
     close = df["close"]
-    atr = _atr(df, UT_ATR_PERIOD)
-    n_loss = atr * UT_ATR_MULT
 
-    trail = np.zeros(len(close))
+    # RSI
+    rsi_s = _rsi_series(close, RSI_PERIOD)
+    rsi_val = _r(rsi_s.iloc[-1], 0)
+
+    # MACD
+    _, _, hist_s = _macd_series(close)
+    hist_now = hist_s.iloc[-1]
+    hist_prev = hist_s.iloc[-2]
+    macd_lbl = _macd_label(
+        None if np.isnan(hist_now) else float(hist_now),
+        None if np.isnan(hist_prev) else float(hist_prev),
+    )
+
+    # Stoch RSI
+    rsi2 = _rsi_series(close, STOCHRSI_RSI_PERIOD)
+    rmin = rsi2.rolling(STOCHRSI_STOCH_PERIOD).min()
+    rmax = rsi2.rolling(STOCHRSI_STOCH_PERIOD).max()
+    stoch = (rsi2 - rmin) / (rmax - rmin) * 100
+    k_val = _r(stoch.rolling(STOCHRSI_K).mean().iloc[-1], 1)
+    stoch_lbl = _stochrsi_label(k_val)
+
+    # Hull Suite
+    hma_s = _hma(close, HMA_PERIOD)
+    hma_val = float(hma_s.iloc[-1])
+    hma_prev = float(hma_s.iloc[-2])
+    hull_dir = "UP" if hma_val > hma_prev else "DOWN"
+    trend_lbl = "YUKARI" if hull_dir == "UP" else "AŞAĞI"
+
+    # Fiyat / Hull label
+    fiyat_hull_lbl = _hull_fiyat_label(hull_dir, float(close.iloc[-1]), hma_val)
+
+    # Donchian
+    upper = df["high"].rolling(DONCHIAN_PERIOD).max()
+    lower = df["low"].rolling(DONCHIAN_PERIOD).min()
+    mid = (upper + lower) / 2
+    donchian_lbl = "YEŞİL" if float(close.iloc[-1]) > float(mid.iloc[-1]) else "KIRMIZI"
+
+    # UT Bot
+    atr_s = _atr(df, UT_ATR_PERIOD)
+    n_loss = (atr_s * UT_ATR_MULT).to_numpy()
     close_arr = close.to_numpy()
-    nloss_arr = n_loss.to_numpy()
-
+    trail = np.zeros(len(close_arr))
     for i in range(1, len(close_arr)):
         prev = trail[i - 1]
         c = close_arr[i]
-        nl = nloss_arr[i]
+        nl = n_loss[i]
         if np.isnan(nl):
             trail[i] = c
             continue
-        if c > prev:
-            trail[i] = max(prev, c - nl)
-        else:
-            trail[i] = min(prev, c + nl)
+        trail[i] = max(prev, c - nl) if c > prev else min(prev, c + nl)
 
-    c_now = close_arr[-1]
-    c_prev = close_arr[-2]
-    t_now = trail[-1]
-    t_prev = trail[-2]
-
+    c_now, c_prev = close_arr[-1], close_arr[-2]
+    t_now, t_prev = trail[-1], trail[-2]
     if c_prev <= t_prev and c_now > t_now:
-        signal = "BUY"
+        ut_lbl = "BUY"
     elif c_prev >= t_prev and c_now < t_now:
-        signal = "SELL"
+        ut_lbl = "SELL"
     else:
-        signal = "NEUTRAL"
+        ut_lbl = "-"
 
     return {
-        "ut_trail_stop": _r(t_now),
-        "ut_signal": signal,
-        "ut_above_trail": bool(c_now > t_now),
+        "donchian": donchian_lbl,
+        "fiyat_hull": fiyat_hull_lbl,
+        "rsi": rsi_val,
+        "ut_bot": ut_lbl,
+        "macd": macd_lbl,
+        "stochrsi": stoch_lbl,
+        "trend": trend_lbl,
     }
-
-
-# ── Tümü ──────────────────────────────────────────────────────────────────────
-
-def get_all(df: pd.DataFrame) -> dict:
-    result = {}
-    result.update(calc_rsi(df))
-    result.update(calc_macd(df))
-    result.update(calc_stochrsi(df))
-    result.update(calc_hull_suite(df))
-    result.update(calc_donchian(df))
-    result.update(calc_ut_bot(df))
-    return result

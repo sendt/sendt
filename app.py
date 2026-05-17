@@ -1,28 +1,42 @@
 #!/usr/bin/env python3
 """
 Çalıştır: python app.py
-Sonra tarayıcıda aç: http://localhost:5000
+Tarayıcıda aç: http://localhost:5000
 """
 
-import csv
 import os
 from datetime import datetime, timezone
 
+import numpy as np
+import pandas as pd
 from flask import Flask, jsonify, render_template, request
 
-from config import CSV_FILE, SYMBOL, TIMEFRAMES
+from config import EXCEL_FILE, SYMBOL, TIMEFRAMES
+from excel_writer import append_row
 from fetcher import fetch_ohlcv
-from indicators import get_all
+from indicators import get_labels
 
 app = Flask(__name__)
 
+# Açık işlemleri geçici bellekte tut (entry price + direction)
+_open_trades: dict[str, dict] = {}
 
-def _fetch_all() -> tuple[dict, float]:
+
+def _fetch_all(demo: bool = False) -> tuple[dict, float]:
     tf_data = {}
     price = 0.0
-    for tf in TIMEFRAMES:
-        df = fetch_ohlcv(tf)
-        tf_data[tf] = get_all(df)
+    for i, tf in enumerate(TIMEFRAMES):
+        if demo:
+            np.random.seed(i * 7)
+            n = 300
+            c = 2.5 + np.cumsum(np.random.randn(n) * 0.01)
+            df = pd.DataFrame({
+                "open": c, "high": c + 0.02, "low": c - 0.02,
+                "close": c, "volume": np.ones(n) * 1000,
+            })
+        else:
+            df = fetch_ohlcv(tf)
+        tf_data[tf] = get_labels(df)
         price = float(df["close"].iloc[-1])
     return tf_data, price
 
@@ -32,74 +46,148 @@ def index():
     return render_template("index.html", symbol=SYMBOL)
 
 
-@app.route("/capture", methods=["POST"])
-def capture():
+@app.route("/open_trade", methods=["POST"])
+def open_trade():
     body = request.json
-    action = body.get("action", "open").upper()
-    trade_id = body.get("trade_id") or datetime.now(timezone.utc).strftime("T%Y%m%d%H%M%S")
-    note = body.get("note", "")
+    demo = body.get("demo", False)
+    direction = body.get("direction", "LONG").upper()
+    stop = body.get("stop", "")
+    tp = body.get("tp", "")
+    trade_id = datetime.now(timezone.utc).strftime("T%y%m%d%H%M%S")
 
     try:
-        tf_data, price = _fetch_all()
+        indicators, price = _fetch_all(demo=demo)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    dt = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    _save_csv(action, trade_id, price, dt, tf_data, note)
+    _open_trades[trade_id] = {
+        "direction": direction,
+        "entry": price,
+        "stop": stop,
+        "tp": tp,
+        "indicators_open": indicators,
+    }
+
+    now = datetime.now(timezone.utc)
+    return jsonify({
+        "trade_id": trade_id,
+        "price": round(price, 4),
+        "datetime_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "indicators": indicators,
+    })
+
+
+@app.route("/close_trade", methods=["POST"])
+def close_trade():
+    body = request.json
+    demo = body.get("demo", False)
+    trade_id = body.get("trade_id", "")
+    result = body.get("result", "").upper()   # WIN / LOSS / BE
+
+    if not trade_id:
+        return jsonify({"error": "trade_id gerekli"}), 400
+
+    open_info = _open_trades.get(trade_id)
+
+    try:
+        indicators_close, close_price = _fetch_all(demo=demo)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    # İşlem bilgileri
+    entry = open_info["entry"] if open_info else close_price
+    stop_val = open_info.get("stop", "") if open_info else ""
+    tp_val = open_info.get("tp", "") if open_info else ""
+    direction = open_info.get("direction", "LONG") if open_info else "LONG"
+    inds_open = open_info.get("indicators_open", indicators_close) if open_info else indicators_close
+
+    # R:R hesapla
+    rr = _calc_rr(direction, entry, stop_val, tp_val)
+
+    now = datetime.now(timezone.utc)
+    trade_row = {
+        "date": now.strftime("%d.%m.%y"),
+        "time": now.strftime("%H:%M"),
+        "direction": direction,
+        "entry": round(entry, 4),
+        "stop": stop_val,
+        "tp": tp_val,
+        "result": result,
+        "rr": rr,
+        "indicators": inds_open,   # açılışta kaydedilen değerler
+    }
+    append_row(trade_row)
+
+    if trade_id in _open_trades:
+        del _open_trades[trade_id]
 
     return jsonify({
         "trade_id": trade_id,
-        "action": action,
-        "price": price,
-        "datetime_utc": dt,
-        "indicators": tf_data,
+        "price": round(close_price, 4),
+        "datetime_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "indicators": indicators_close,
+        "result": result,
+        "rr": rr,
     })
 
 
 @app.route("/history")
 def history():
-    if not os.path.isfile(CSV_FILE):
+    import openpyxl
+    if not os.path.isfile(EXCEL_FILE):
         return jsonify([])
-    rows = []
-    with open(CSV_FILE, newline="") as f:
-        for row in csv.DictReader(f):
-            rows.append(row)
-    # son 50 kayıt, en yenisi önce
-    return jsonify(list(reversed(rows[-50:])))
+    try:
+        wb = openpyxl.load_workbook(EXCEL_FILE)
+        ws = wb["TRADE LOG"]
+        rows = []
+        for row in ws.iter_rows(min_row=5, values_only=True):
+            if row[0] is None and row[1] is None:
+                continue
+            rows.append({
+                "date": str(row[0]) if row[0] else "",
+                "time": str(row[1]) if row[1] else "",
+                "direction": row[2] or "",
+                "entry": row[3] or "",
+                "stop": row[4] or "",
+                "tp": row[5] or "",
+                "result": row[6] or "",
+                "rr": row[7] or "",
+                "ind_1m":  _row_slice(row, 8),
+                "ind_5m":  _row_slice(row, 15),
+                "ind_15m": _row_slice(row, 22),
+                "ind_1h":  _row_slice(row, 29),
+            })
+        return jsonify(list(reversed(rows[-50:])))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
-def _save_csv(action, trade_id, price, dt, tf_data, note):
-    tfs = TIMEFRAMES
-    headers = ["trade_id", "action", "symbol", "datetime_utc", "price"]
-    for tf in tfs:
-        headers += [
-            f"{tf}_rsi",
-            f"{tf}_macd", f"{tf}_macd_signal", f"{tf}_macd_hist",
-            f"{tf}_stochrsi_k", f"{tf}_stochrsi_d",
-            f"{tf}_hull_hma", f"{tf}_hull_dir",
-            f"{tf}_donchian_upper", f"{tf}_donchian_mid",
-            f"{tf}_donchian_lower", f"{tf}_donchian_trend",
-            f"{tf}_ut_trail_stop", f"{tf}_ut_signal", f"{tf}_ut_above_trail",
-        ]
-    headers.append("notes")
+def _row_slice(row, start):
+    keys = ["donchian", "fiyat_hull", "rsi", "ut_bot", "macd", "stochrsi", "trend"]
+    vals = row[start:start + 7]
+    return {k: (v or "-") for k, v in zip(keys, vals)}
 
-    row = {
-        "trade_id": trade_id, "action": action, "symbol": SYMBOL,
-        "datetime_utc": dt, "price": price, "notes": note,
-    }
-    for tf, data in tf_data.items():
-        for k, v in data.items():
-            row[f"{tf}_{k}"] = v
 
-    file_exists = os.path.isfile(CSV_FILE)
-    with open(CSV_FILE, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(row)
+def _calc_rr(direction, entry, stop, tp) -> str:
+    try:
+        entry = float(entry)
+        stop = float(stop)
+        tp = float(tp)
+        if direction == "LONG":
+            risk = entry - stop
+            reward = tp - entry
+        else:
+            risk = stop - entry
+            reward = entry - tp
+        if risk <= 0:
+            return "-"
+        ratio = round(reward / risk, 1)
+        return f"1:{ratio}"
+    except (ValueError, TypeError):
+        return "-"
 
 
 if __name__ == "__main__":
     print("\n  Trade Logger başlatıldı.")
-    print("  Tarayıcıda aç: http://localhost:5000\n")
+    print(f"  Tarayıcıda aç: http://localhost:5000\n")
     app.run(host="0.0.0.0", port=5000, debug=False)
