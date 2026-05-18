@@ -5,6 +5,8 @@ Tarayıcıda aç: http://localhost:5000
 """
 
 import os
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
@@ -21,7 +23,12 @@ app = Flask(__name__)
 
 _open_trades: dict[str, dict] = {}
 
-GUNLER  = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"]
+GUNLER = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"]
+
+# ── Önbellek ─────────────────────────────────────────────────────────────────
+_cache      = {"tf_data": None, "price": 0.0, "btc_yon": "-", "ts": 0.0}
+_cache_lock = threading.Lock()
+CACHE_TTL   = 20  # saniye
 
 
 def _seans(hour_utc: int) -> str:
@@ -55,20 +62,51 @@ def _fetch_all(demo=False):
     with ThreadPoolExecutor(max_workers=6) as pool:
         tf_futures = {pool.submit(_one, tf, i*7): tf for i, tf in enumerate(TIMEFRAMES)}
         btc_future = pool.submit(_btc)
-
         for f in as_completed(tf_futures):
             tf, labels, p = f.result()
             tf_data[tf] = labels
             price = p
-
         btc_yon = btc_future.result()
 
     return tf_data, price, btc_yon
 
 
+def _cache_worker():
+    """Arka planda her CACHE_TTL saniyede veriyi günceller."""
+    while True:
+        try:
+            tf_data, price, btc_yon = _fetch_all()
+            with _cache_lock:
+                _cache["tf_data"] = tf_data
+                _cache["price"]   = price
+                _cache["btc_yon"] = btc_yon
+                _cache["ts"]      = time.time()
+        except Exception:
+            pass
+        time.sleep(CACHE_TTL)
+
+
+def _get_data(demo=False):
+    """Önbellekten al; demo modunda veya önbellek boşsa canlı çek."""
+    if demo:
+        return _fetch_all(demo=True)
+    with _cache_lock:
+        if _cache["tf_data"] is not None:
+            return _cache["tf_data"], _cache["price"], _cache["btc_yon"]
+    # Önbellek henüz dolmadıysa ilk kez canlı çek
+    return _fetch_all()
+
+
 @app.route("/")
 def index():
     return render_template("index.html", symbol=SYMBOL)
+
+
+@app.route("/cache_age")
+def cache_age():
+    with _cache_lock:
+        age = int(time.time() - _cache["ts"]) if _cache["ts"] else -1
+    return jsonify({"age": age})
 
 
 @app.route("/open_trade", methods=["POST"])
@@ -79,20 +117,23 @@ def open_trade():
     trade_id  = datetime.now(timezone.utc).strftime("T%y%m%d%H%M%S")
 
     try:
-        indicators, price, btc_yon = _fetch_all(demo=demo)
+        indicators, price, btc_yon = _get_data(demo=demo)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
     now = datetime.now(timezone.utc)
     _open_trades[trade_id] = {
-        "direction":      direction,
+        "direction":       direction,
         "indicators_open": indicators,
-        "btc_yon":        btc_yon,
-        "gun":            GUNLER[now.weekday()],
-        "seans":          _seans(now.hour),
-        "date":           now.strftime("%d.%m.%y"),
-        "time":           now.strftime("%H:%M"),
+        "btc_yon":         btc_yon,
+        "gun":             GUNLER[now.weekday()],
+        "seans":           _seans(now.hour),
+        "date":            now.strftime("%d.%m.%y"),
+        "time":            now.strftime("%H:%M"),
     }
+
+    with _cache_lock:
+        age = int(time.time() - _cache["ts"]) if _cache["ts"] else -1
 
     return jsonify({
         "trade_id":    trade_id,
@@ -102,6 +143,7 @@ def open_trade():
         "btc_yon":     btc_yon,
         "gun":         GUNLER[now.weekday()],
         "seans":       _seans(now.hour),
+        "cache_age":   age,
     })
 
 
@@ -118,7 +160,7 @@ def close_trade():
     open_info = _open_trades.get(trade_id, {})
 
     try:
-        indicators_close, close_price, _ = _fetch_all(demo=demo)
+        indicators_close, close_price, _ = _get_data(demo=demo)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -188,4 +230,7 @@ def _slice(row, start, n):
 if __name__ == "__main__":
     print("\n  Trade Logger başlatıldı.")
     print(f"  Tarayıcıda aç: http://localhost:5000\n")
+    # Arka plan önbellek thread'i başlat
+    t = threading.Thread(target=_cache_worker, daemon=True)
+    t.start()
     app.run(host="0.0.0.0", port=5000, debug=False)

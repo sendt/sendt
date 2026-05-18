@@ -146,6 +146,7 @@ tr:hover td { background:#f8fafc; }
   <div class="meta-card"><div class="meta-lbl">Seans</div><div class="meta-val" id="mSeans">—</div></div>
   <div class="meta-card"><div class="meta-lbl">BTC Yön</div><div class="meta-val" id="mBtc">—</div></div>
   <div class="meta-card"><div class="meta-lbl">Zaman (UTC)</div><div class="meta-val" id="mTime">—</div></div>
+  <div class="meta-card"><div class="meta-lbl">Veri Yaşı</div><div class="meta-val" id="mAge" style="font-size:0.8rem;color:#64748b">—</div></div>
 </div>
 
 <!-- Indikatörler -->
@@ -252,6 +253,9 @@ function showMeta(data) {
   document.getElementById('mSeans').textContent = data.seans || '—';
   document.getElementById('mBtc').innerHTML     = `<span style="color:${btcColor}">${data.btc_yon||'—'}</span>`;
   document.getElementById('mTime').textContent  = data.datetime_utc;
+  if (data.cache_age !== undefined && data.cache_age >= 0)
+    document.getElementById('mAge').textContent = data.cache_age + 's önce';
+
 }
 
 function setTradeOpen(isOpen) {
