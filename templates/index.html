@@ -103,6 +103,7 @@ tr:hover td { background:#f8fafc; }
 <div class="open-banner" id="openBanner">
   <div><span class="ob-dot"></span><span class="ob-text">AÇIK İŞLEM VAR — Önce kapat!</span></div>
   <div class="ob-id" id="bannerTradeId"></div>
+  <button onclick="cancelTrade()" style="margin-top:7px;padding:4px 12px;font-size:0.75rem;border:1px solid #b45309;border-radius:5px;background:#fef3c7;color:#92400e;cursor:pointer;font-weight:600;">✕ İptal Et (kaydetmeden sıfırla)</button>
 </div>
 
 <div class="panels">
@@ -253,6 +254,14 @@ function showMeta(data) {
   document.getElementById('mSeans').textContent = data.seans || '—';
   document.getElementById('mBtc').innerHTML     = `<span style="color:${btcColor}">${data.btc_yon||'—'}</span>`;
   document.getElementById('mTime').textContent  = data.datetime_utc;
+}
+
+function cancelTrade() {
+  tradeId = '';
+  document.getElementById('inpCloseId').value = '';
+  document.getElementById('tradeBadge').style.display = 'none';
+  setTradeOpen(false);
+  sts('statusOpen', 'İptal edildi — yeni işlem açabilirsin', 'ok');
 }
 
 function setTradeOpen(isOpen, tid) {
