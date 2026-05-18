@@ -28,7 +28,7 @@ GUNLER = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"]
 # ── Önbellek ─────────────────────────────────────────────────────────────────
 _cache      = {"tf_data": None, "price": 0.0, "btc_yon": "-", "ts": 0.0}
 _cache_lock = threading.Lock()
-CACHE_TTL   = 20  # saniye
+CACHE_TTL   = 5  # saniye
 
 
 def _seans(hour_utc: int) -> str:
