@@ -44,6 +44,13 @@ h1 { text-align:center; font-size:1rem; color:#2563eb; letter-spacing:2px; text-
 .trade-badge { background:#eff6ff; border:1px solid #bfdbfe; border-radius:7px; padding:7px 11px; font-size:0.75rem; color:#64748b; margin-top:8px; display:none; }
 .trade-badge code { color:#2563eb; }
 
+.open-banner { display:none; background:#fef9c3; border:2px solid #eab308; border-radius:9px; padding:10px 14px; margin-bottom:12px; text-align:center; }
+.open-banner .ob-dot { display:inline-block; width:9px; height:9px; background:#eab308; border-radius:50%; margin-right:6px; animation:pulse 1.2s infinite; }
+.open-banner .ob-text { font-size:0.85rem; font-weight:700; color:#92400e; }
+.open-banner .ob-id { font-size:0.75rem; color:#78350f; margin-top:3px; font-family:monospace; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.panel-locked { border-color:#eab308 !important; background:#fffbeb !important; }
+
 /* Meta info bar */
 .meta-bar { max-width:1020px; margin:0 auto 14px; display:flex; gap:10px; }
 .meta-card { flex:1; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; text-align:center; box-shadow:0 1px 2px #0000000a; }
@@ -92,9 +99,15 @@ tr:hover td { background:#f8fafc; }
 <h1>WLD / USDT — Trade Logger</h1>
 <div class="subtitle">TradingView'da işlem aç → butona bas → indikatörler kaydedilir</div>
 
+<!-- Açık işlem uyarısı -->
+<div class="open-banner" id="openBanner">
+  <div><span class="ob-dot"></span><span class="ob-text">AÇIK İŞLEM VAR — Önce kapat!</span></div>
+  <div class="ob-id" id="bannerTradeId"></div>
+</div>
+
 <div class="panels">
   <!-- Sol: Aç -->
-  <div class="panel">
+  <div class="panel" id="panelOpen">
     <div class="panel-title">▶ İşlem Aç</div>
     <div class="field">
       <label>Yön</label>
@@ -242,24 +255,41 @@ function showMeta(data) {
   document.getElementById('mTime').textContent  = data.datetime_utc;
 }
 
+function setTradeOpen(isOpen, tid) {
+  const btn    = document.getElementById('btnOpen');
+  const banner = document.getElementById('openBanner');
+  const panel  = document.getElementById('panelOpen');
+  if (isOpen) {
+    btn.disabled = true;
+    banner.style.display = 'block';
+    document.getElementById('bannerTradeId').textContent = tid;
+    panel.classList.add('panel-locked');
+  } else {
+    btn.disabled = false;
+    banner.style.display = 'none';
+    document.getElementById('bannerTradeId').textContent = '';
+    panel.classList.remove('panel-locked');
+  }
+}
+
 async function openTrade() {
+  if (tradeId) { sts('statusOpen','Önce açık işlemi kapat!','err'); return; }
   document.getElementById('btnOpen').disabled = true;
   sts('statusOpen','Veri çekiliyor...','load');
   try {
     const res  = await fetch('/open_trade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({direction:dir})});
     const data = await res.json();
-    if (data.error) { sts('statusOpen','Hata: '+data.error,'err'); return; }
+    if (data.error) { sts('statusOpen','Hata: '+data.error,'err'); document.getElementById('btnOpen').disabled = false; return; }
     tradeId = data.trade_id;
     document.getElementById('openTradeId').textContent = tradeId;
     document.getElementById('tradeBadge').style.display = 'block';
     document.getElementById('inpCloseId').value = tradeId;
+    setTradeOpen(true, tradeId);
     showMeta(data);
-    ['1m','5m','15m','1h','1d'].forEach(tf => { if(data.indicators[tf]) renderTf('tf'+tf.replace('d','d'), data.indicators[tf]); });
-    // fix 1d id
+    ['1m','5m','15m','1h','1d'].forEach(tf => { if(data.indicators[tf]) renderTf('tf'+tf, data.indicators[tf]); });
     if(data.indicators['1d']) renderTf('tf1d', data.indicators['1d']);
     sts('statusOpen',`✓ Kaydedildi — ${data.datetime_utc} UTC`,'ok');
-  } catch(e) { sts('statusOpen','Bağlantı hatası: '+e.message,'err'); }
-  finally { document.getElementById('btnOpen').disabled = false; }
+  } catch(e) { sts('statusOpen','Bağlantı hatası: '+e.message,'err'); document.getElementById('btnOpen').disabled = false; }
 }
 
 async function closeTrade() {
@@ -277,6 +307,7 @@ async function closeTrade() {
     sts('statusClose',`✓ Excel'e kaydedildi — ${data.datetime_utc} UTC`,'ok');
     document.getElementById('tradeBadge').style.display='none';
     tradeId=''; document.getElementById('inpCloseId').value=''; setResult('');
+    setTradeOpen(false);
     loadHistory();
   } catch(e) { sts('statusClose','Bağlantı hatası: '+e.message,'err'); }
   finally { document.getElementById('btnClose').disabled=false; }
