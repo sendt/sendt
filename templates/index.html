@@ -184,6 +184,13 @@ tr:hover td { background:#f8fafc; }
 <script>
 let dir = 'LONG', result = '', tradeId = '';
 
+// Sayfa açıldığında localStorage'dan eski açık işlemi geri yükle
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('openTradeId');
+  if (saved) { tradeId = saved; _applyTradeOpenUI(true, saved); }
+  loadHistory();
+});
+
 function setDir(d) {
   dir = d;
   document.getElementById('btnLong').className  = 'dir-btn' + (d==='LONG'  ? ' active-long'  : '');
@@ -256,22 +263,15 @@ function showMeta(data) {
   document.getElementById('mTime').textContent  = data.datetime_utc;
 }
 
-function cancelTrade() {
-  tradeId = '';
-  document.getElementById('inpCloseId').value = '';
-  document.getElementById('tradeBadge').style.display = 'none';
-  setTradeOpen(false);
-  sts('statusOpen', 'İptal edildi — yeni işlem açabilirsin', 'ok');
-}
-
-function setTradeOpen(isOpen, tid) {
+function _applyTradeOpenUI(isOpen, tid) {
   const btn    = document.getElementById('btnOpen');
   const banner = document.getElementById('openBanner');
   const panel  = document.getElementById('panelOpen');
   if (isOpen) {
     btn.disabled = true;
     banner.style.display = 'block';
-    document.getElementById('bannerTradeId').textContent = tid;
+    document.getElementById('bannerTradeId').textContent = tid || '';
+    document.getElementById('inpCloseId').value = tid || '';
     panel.classList.add('panel-locked');
   } else {
     btn.disabled = false;
@@ -279,6 +279,24 @@ function setTradeOpen(isOpen, tid) {
     document.getElementById('bannerTradeId').textContent = '';
     panel.classList.remove('panel-locked');
   }
+}
+
+function setTradeOpen(isOpen, tid) {
+  if (isOpen) {
+    localStorage.setItem('openTradeId', tid);
+  } else {
+    localStorage.removeItem('openTradeId');
+  }
+  _applyTradeOpenUI(isOpen, tid);
+}
+
+function cancelTrade() {
+  tradeId = '';
+  localStorage.removeItem('openTradeId');
+  document.getElementById('inpCloseId').value = '';
+  document.getElementById('tradeBadge').style.display = 'none';
+  _applyTradeOpenUI(false);
+  sts('statusOpen', 'İptal edildi — yeni işlem açabilirsin', 'ok');
 }
 
 async function openTrade() {
@@ -357,7 +375,6 @@ async function loadHistory() {
     </tr>`).join('');
   } catch(e) {}
 }
-loadHistory();
 </script>
 </body>
 </html>
