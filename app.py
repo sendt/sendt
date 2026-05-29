@@ -130,6 +130,8 @@ def open_trade():
         "seans":           _seans(now.hour),
         "date":            now.strftime("%d.%m.%y"),
         "time":            now.strftime("%H:%M"),
+        "entry_price":     round(price, 4),
+        "open_dt":         now,
     }
 
     with _cache_lock:
@@ -164,16 +166,23 @@ def close_trade():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+    close_dt   = datetime.now(timezone.utc)
+    open_dt    = open_info.get("open_dt")
+    duration   = round((close_dt - open_dt).total_seconds() / 60, 1) if open_dt else "-"
+
     append_row({
-        "date":        open_info.get("date", ""),
-        "time":        open_info.get("time", ""),
-        "gun":         open_info.get("gun", ""),
-        "seans":       open_info.get("seans", ""),
-        "direction":   open_info.get("direction", "LONG"),
-        "result":      result,
-        "indicators":  open_info.get("indicators_open", indicators_close),
-        "btc_yon":     open_info.get("btc_yon", "-"),
-        "close_price": round(close_price, 4),
+        "date":         open_info.get("date", ""),
+        "time":         open_info.get("time", ""),
+        "gun":          open_info.get("gun", ""),
+        "seans":        open_info.get("seans", ""),
+        "direction":    open_info.get("direction", "LONG"),
+        "result":       result,
+        "indicators":   open_info.get("indicators_open", indicators_close),
+        "btc_yon":      open_info.get("btc_yon", "-"),
+        "entry_price":  open_info.get("entry_price", "-"),
+        "close_price":  round(close_price, 4),
+        "close_time":   close_dt.strftime("%H:%M"),
+        "duration_min": duration,
     })
 
     _open_trades.pop(trade_id, None)

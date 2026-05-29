@@ -41,7 +41,7 @@ IND_W     = [10,7,14,6,7,8,7, 8,8,8,8,11,11,8, 9,9,7]
 
 BTC_COLS   = ["BTC Yön"]
 BTC_KEYS   = ["btc_yon"]
-EXTRA_COLS = ["Çıkış Fiyatı"]
+EXTRA_COLS = ["Giriş Fiyatı", "Çıkış Fiyatı", "Kapanış Saati", "Süre(dk)"]
 ALL_COLS   = INFO_COLS + IND_COLS * len(TIMEFRAMES) + BTC_COLS + EXTRA_COLS
 
 
@@ -224,7 +224,10 @@ def append_row(trade: dict):
         for k in IND_KEYS:
             values.append(tf_data.get(k,"-"))
     values.append(trade.get("btc_yon","-"))
-    values.append(trade.get("close_price","-"))
+    values.append(trade.get("entry_price", "-"))
+    values.append(trade.get("close_price", "-"))
+    values.append(trade.get("close_time",  "-"))
+    values.append(trade.get("duration_min","-"))
 
     for col_i, (val, col_name) in enumerate(zip(values, ALL_COLS), start=1):
         cell = ws.cell(row=next_row, column=col_i, value=val)
