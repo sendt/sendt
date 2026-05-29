@@ -199,11 +199,37 @@ def _val_color(col, val):
     return None
 
 
+def _ensure_extra_headers(ws):
+    """Mevcut Excel'de eksik sütun başlıklarını ekler."""
+    expected = ALL_COLS
+    for i, col_name in enumerate(expected, start=1):
+        cell = ws.cell(row=4, column=i)
+        if cell.value is None:
+            cell.value = col_name
+            cell.font = _font(bold=True, size=8)
+            cell.alignment = _center()
+            cell.border = _border()
+            n_info = len(INFO_COLS)
+            n_tf   = len(IND_COLS) * len(TIMEFRAMES)
+            n_btc  = len(BTC_COLS)
+            if i <= n_info:
+                cell.fill = _fill(C_INFO)
+            elif i <= n_info + n_tf:
+                tf_idx = min((i - n_info - 1) // len(IND_COLS), len(TIMEFRAMES) - 1)
+                cell.fill = _fill(TF_COLORS[TIMEFRAMES[tf_idx]])
+            elif i <= n_info + n_tf + n_btc:
+                cell.fill = _fill(C_TF_BTC)
+            else:
+                cell.fill = _fill(C_INFO)
+            ws.column_dimensions[get_column_letter(i)].width = 12
+
+
 def append_row(trade: dict):
     os.makedirs(os.path.dirname(EXCEL_FILE), exist_ok=True)
     if os.path.isfile(EXCEL_FILE):
         wb = openpyxl.load_workbook(EXCEL_FILE)
         ws = wb["TRADE LOG"]
+        _ensure_extra_headers(ws)
     else:
         wb = _create_workbook()
         ws = wb["TRADE LOG"]
