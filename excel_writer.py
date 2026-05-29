@@ -39,9 +39,10 @@ IND_KEYS  = ["donchian","donchian_pct","fiyat_hull","rsi","rsi_prev","rsi_yon","
              "vol_lbl","vol_ratio","atr_pct"]
 IND_W     = [10,7,14,6,7,8,7, 8,8,8,8,11,11,8, 9,9,7]
 
-BTC_COLS  = ["BTC Yön"]
-BTC_KEYS  = ["btc_yon"]
-ALL_COLS  = INFO_COLS + IND_COLS * len(TIMEFRAMES) + BTC_COLS
+BTC_COLS   = ["BTC Yön"]
+BTC_KEYS   = ["btc_yon"]
+EXTRA_COLS = ["Çıkış Fiyatı"]
+ALL_COLS   = INFO_COLS + IND_COLS * len(TIMEFRAMES) + BTC_COLS + EXTRA_COLS
 
 
 def _fill(c): return PatternFill("solid", fgColor=c)
@@ -99,7 +100,17 @@ def _create_workbook():
     ws[f"{btc_col}3"].fill = _fill(C_TF_BTC)
     ws[f"{btc_col}3"].alignment = _center()
 
+    # EXTRA bölümü (Çıkış Fiyatı vb.)
+    extra_start = col + 1
+    for j, lbl in enumerate(EXTRA_COLS):
+        ec = get_column_letter(extra_start + j)
+        ws[f"{ec}3"] = lbl
+        ws[f"{ec}3"].font = _font(bold=True)
+        ws[f"{ec}3"].fill = _fill(C_INFO)
+        ws[f"{ec}3"].alignment = _center()
+
     # Satır 4 — sütun isimleri
+    n_btc_extra = len(BTC_COLS) + len(EXTRA_COLS)
     for i, h in enumerate(ALL_COLS, start=1):
         cell = ws.cell(row=4, column=i, value=h)
         if i <= n_info:
@@ -107,8 +118,10 @@ def _create_workbook():
         elif i <= n_info + len(IND_COLS) * len(TIMEFRAMES):
             tf_idx = min((i - n_info - 1) // len(IND_COLS), len(TIMEFRAMES) - 1)
             cell.fill = _fill(TF_COLORS[TIMEFRAMES[tf_idx]])
-        else:
+        elif i <= n_info + len(IND_COLS) * len(TIMEFRAMES) + len(BTC_COLS):
             cell.fill = _fill(C_TF_BTC)
+        else:
+            cell.fill = _fill(C_INFO)
         cell.font = _font(bold=True, size=8)
         cell.alignment = _center()
         cell.border = _border()
@@ -211,6 +224,7 @@ def append_row(trade: dict):
         for k in IND_KEYS:
             values.append(tf_data.get(k,"-"))
     values.append(trade.get("btc_yon","-"))
+    values.append(trade.get("close_price","-"))
 
     for col_i, (val, col_name) in enumerate(zip(values, ALL_COLS), start=1):
         cell = ws.cell(row=next_row, column=col_i, value=val)

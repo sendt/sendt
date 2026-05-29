@@ -165,14 +165,15 @@ def close_trade():
         return jsonify({"error": str(e)}), 500
 
     append_row({
-        "date":      open_info.get("date", ""),
-        "time":      open_info.get("time", ""),
-        "gun":       open_info.get("gun", ""),
-        "seans":     open_info.get("seans", ""),
-        "direction": open_info.get("direction", "LONG"),
-        "result":    result,
-        "indicators":open_info.get("indicators_open", indicators_close),
-        "btc_yon":   open_info.get("btc_yon", "-"),
+        "date":        open_info.get("date", ""),
+        "time":        open_info.get("time", ""),
+        "gun":         open_info.get("gun", ""),
+        "seans":       open_info.get("seans", ""),
+        "direction":   open_info.get("direction", "LONG"),
+        "result":      result,
+        "indicators":  open_info.get("indicators_open", indicators_close),
+        "btc_yon":     open_info.get("btc_yon", "-"),
+        "close_price": round(close_price, 4),
     })
 
     _open_trades.pop(trade_id, None)
