@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "YDS Kelimelerim",
+    "slug": "ydskelimelerim",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "ydskelimelerim",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "backgroundColor": "#0f172a",
+    "ios": {
+      "bundleIdentifier": "com.ydskelimelerim",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.ydskelimelerim",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
